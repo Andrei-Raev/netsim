@@ -1,0 +1,14 @@
+[package]
+name = "netsim-cli"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+netsim-core = { path = "../netsim-core" }
+netsim-screen = { path = "../netsim-screen" }
+
+clap = { version = "4.5", features = ["derive"] }
+console = "0.16"
+dialoguer = { version = "0.12", default-features = false }
+tabled = "0.20"
+config = "0.15.19"
