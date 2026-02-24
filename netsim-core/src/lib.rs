@@ -24,6 +24,7 @@ pub use memory::{
 pub use packet::{Packet, PacketSpec};
 pub use sim::{SimPipeline, SimResult};
 pub use stats::SimStats;
+pub use world::agents_grid::AgentHashGrid;
 pub use world::{
     ActiveWindow, FieldShape, FieldSource, InfluenceType, TimeProfile, Vec2, WorldBase, WorldCell,
     WorldConfig, WorldFieldType, WorldGrid,

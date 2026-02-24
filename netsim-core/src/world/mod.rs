@@ -3,6 +3,7 @@
 //! Цель: детерминированное, stateless‑описание мировых полей (load/noise/bandwidth/cost)
 //! с минимальным API, которое потом можно заменить GPU‑реализацией без ломки интерфейса.
 
+pub mod agents_grid;
 pub mod cpu;
 
 use std::fmt;
