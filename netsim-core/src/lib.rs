@@ -7,6 +7,7 @@ pub mod memory;
 pub mod packet;
 pub mod sim;
 pub mod stats;
+pub mod world;
 
 pub use agent::{AgentBuilder, AgentSoA, AgentSpec};
 pub use agent_runtime::{
@@ -23,3 +24,7 @@ pub use memory::{
 pub use packet::{Packet, PacketSpec};
 pub use sim::{SimPipeline, SimResult};
 pub use stats::SimStats;
+pub use world::{
+    ActiveWindow, FieldShape, FieldSource, InfluenceType, TimeProfile, Vec2, WorldBase, WorldCell,
+    WorldConfig, WorldFieldType, WorldGrid,
+};
