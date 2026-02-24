@@ -50,7 +50,20 @@ impl SimPipeline {
 
     /// Создает пайплайн по конфигу ядра.
     pub fn from_config(config: SimConfig) -> Self {
-        Self::new(config.agents_count as usize)
+        let runtime = AgentRuntime::new(Box::new(AllowAllAlgorithm), Box::new(AllowAllValidator));
+        let event_queue = EventQueue::new(EventQueueConfig {
+            window_size: config.event_queue_window,
+        });
+
+        Self {
+            agents: AgentSoA::new(config.agents_count as usize),
+            stats: SimStats::default(),
+            current_tick: 0,
+            event_queue,
+            runtime,
+            agent_memory: vec![AgentMemory::default(); config.agents_count as usize],
+            routing_tables: vec![RoutingTable::default(); config.agents_count as usize],
+        }
     }
 
     /// Выполняет один тик симуляции.
@@ -185,5 +198,17 @@ mod tests {
         pipeline.process_current_events();
 
         assert_eq!(pipeline.stats.packets_drop, 1);
+    }
+
+    #[test]
+    fn pipeline_respects_configured_event_queue_window() {
+        let config = SimConfig {
+            agents_count: 1,
+            ticks: 1,
+            event_queue_window: 3,
+        };
+        let pipeline = SimPipeline::from_config(config);
+
+        assert_eq!(pipeline.event_queue.window_size(), 3);
     }
 }
