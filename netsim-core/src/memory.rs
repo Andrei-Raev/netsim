@@ -87,6 +87,18 @@ pub struct RouteEntry {
     pub _pad: u8,
 }
 
+/// Флаг валидной записи маршрута.
+pub const ROUTE_FLAG_VALID: u8 = 0b0000_0001;
+
+/// Ошибки при работе с таблицей маршрутизации.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RoutingTableError {
+    /// Таблица заполнена — нет свободных слотов.
+    Full,
+    /// Некорректный TTL (0).
+    InvalidTtl,
+}
+
 /// Описание параметров памяти агента, задаваемых фабрикой.
 #[derive(Debug, Clone, Copy)]
 pub struct AgentMemorySpec {

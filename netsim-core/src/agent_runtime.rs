@@ -1,3 +1,4 @@
+use crate::memory::{ROUTE_FLAG_VALID, RoutingTableError};
 use crate::{AgentMemoryArena, AgentMemoryBlockMut, AgentSoA, Event, MemoryId, RouteEntry};
 use std::marker::PhantomData;
 
@@ -40,6 +41,91 @@ impl<'a> RoutingTable<'a> {
     /// Возвращает mutable-доступ к записям таблицы.
     pub fn entries_mut(&mut self) -> &mut [RouteEntry] {
         unsafe { std::slice::from_raw_parts_mut(self.entries_ptr, self.entries_len) }
+    }
+
+    /// Ищет запись по dst_id.
+    pub fn find(&mut self, dst_id: u32) -> Option<&mut RouteEntry> {
+        self.entries_mut()
+            .iter_mut()
+            .find(|entry| entry.flags & ROUTE_FLAG_VALID != 0 && entry.dst_id == dst_id)
+    }
+
+    /// Вставляет или обновляет маршрут.
+    pub fn upsert(
+        &mut self,
+        dst_id: u32,
+        next_hop: u32,
+        cost: f32,
+        ttl: u16,
+        last_seen_tick: u64,
+    ) -> Result<(), RoutingTableError> {
+        if ttl == 0 {
+            return Err(RoutingTableError::InvalidTtl);
+        }
+
+        if let Some(entry) = self.find(dst_id) {
+            entry.next_hop = next_hop;
+            entry.cost = cost;
+            entry.ttl = ttl;
+            entry.last_seen_tick = last_seen_tick;
+            entry.flags |= ROUTE_FLAG_VALID;
+            return Ok(());
+        }
+
+        if let Some(entry) = self
+            .entries_mut()
+            .iter_mut()
+            .find(|entry| entry.flags & ROUTE_FLAG_VALID == 0)
+        {
+            entry.dst_id = dst_id;
+            entry.next_hop = next_hop;
+            entry.cost = cost;
+            entry.ttl = ttl;
+            entry.last_seen_tick = last_seen_tick;
+            entry.flags = ROUTE_FLAG_VALID;
+            self.set_mem_used(self.mem_used().saturating_add(1));
+            return Ok(());
+        }
+
+        Err(RoutingTableError::Full)
+    }
+
+    /// Удаляет запись по dst_id.
+    pub fn remove(&mut self, dst_id: u32) -> bool {
+        if let Some(entry) = self.find(dst_id) {
+            entry.flags = 0;
+            entry.ttl = 0;
+            self.set_mem_used(self.mem_used().saturating_sub(1));
+            return true;
+        }
+        false
+    }
+
+    /// Отмечает устаревшие записи (TTL=0) и пересчитывает mem_used.
+    pub fn cleanup_expired(&mut self) -> u32 {
+        let mut used = 0u32;
+        for entry in self.entries_mut().iter_mut() {
+            if entry.flags & ROUTE_FLAG_VALID == 0 {
+                continue;
+            }
+            if entry.ttl == 0 {
+                entry.flags = 0;
+                continue;
+            }
+            used = used.saturating_add(1);
+        }
+        self.set_mem_used(used);
+        used
+    }
+
+    /// Декрементирует TTL у всех валидных записей.
+    pub fn decay_ttl(&mut self) {
+        for entry in self.entries_mut().iter_mut() {
+            if entry.flags & ROUTE_FLAG_VALID == 0 {
+                continue;
+            }
+            entry.ttl = entry.ttl.saturating_sub(1);
+        }
     }
 }
 
