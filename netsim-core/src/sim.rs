@@ -1,6 +1,6 @@
 use crate::{
     AgentMemory, AgentMemoryArena, AgentRuntime, AgentSoA, AllowAllValidator, Event, EventQueue,
-    EventQueueConfig, Packet, SimConfig, SimStats,
+    EventQueueConfig, Packet, SimConfig, SimStats, WorldGrid,
 };
 
 /// Результат прогона симуляции.
@@ -27,6 +27,10 @@ pub struct SimPipeline {
     pub runtime: AgentRuntime,
     /// Общий пул памяти агентов.
     pub memory_arena: AgentMemoryArena,
+    /// Текущая сетка мира (CPU‑референс).
+    pub world_grid: Option<WorldGrid>,
+    /// Порог шума для дропа пакетов.
+    pub world_noise_drop_threshold: f32,
 }
 
 impl SimPipeline {
@@ -50,6 +54,8 @@ impl SimPipeline {
             event_queue,
             runtime,
             memory_arena,
+            world_grid: None,
+            world_noise_drop_threshold: 0.0,
         }
     }
 
@@ -81,6 +87,8 @@ impl SimPipeline {
             event_queue,
             runtime,
             memory_arena,
+            world_grid: None,
+            world_noise_drop_threshold: 0.0,
         }
     }
 
@@ -89,6 +97,21 @@ impl SimPipeline {
         self.process_current_events();
         self.current_tick = self.event_queue.current_tick();
         self.event_queue.advance();
+    }
+
+    /// Устанавливает сетку мира для текущего тика.
+    pub fn set_world_grid(&mut self, grid: WorldGrid) {
+        self.world_grid = Some(grid);
+    }
+
+    /// Сбрасывает сетку мира (симуляция без влияния мира).
+    pub fn clear_world_grid(&mut self) {
+        self.world_grid = None;
+    }
+
+    /// Настраивает порог шума, при котором пакет дропается.
+    pub fn set_world_noise_drop_threshold(&mut self, threshold: f32) {
+        self.world_noise_drop_threshold = threshold.max(0.0);
     }
 
     /// Запускает симуляцию на заданное число тиков.
@@ -117,6 +140,12 @@ impl SimPipeline {
                 self.stats.packets_drop += 1;
                 continue;
             }
+
+            if self.should_drop_by_world(&event) {
+                self.stats.packets_drop += 1;
+                continue;
+            }
+
             event.payload.ttl = event.payload.ttl.saturating_sub(1);
 
             let id = self.agents.memory_id[agent_index];
@@ -132,6 +161,29 @@ impl SimPipeline {
                 self.stats.packets_recv += 1;
             }
         }
+    }
+
+    fn should_drop_by_world(&self, event: &Event) -> bool {
+        if self.world_noise_drop_threshold <= 0.0 {
+            return false;
+        }
+        let grid = match &self.world_grid {
+            Some(grid) => grid,
+            None => return false,
+        };
+
+        let agent_index = event.agent_id as usize;
+        if agent_index >= self.agents.len() {
+            return false;
+        }
+        let pos_x = self.agents.pos_x[agent_index];
+        let pos_y = self.agents.pos_y[agent_index];
+        let cell = match grid.sample(pos_x, pos_y) {
+            Some(cell) => cell,
+            None => return false,
+        };
+
+        cell.noise >= self.world_noise_drop_threshold
     }
 }
 
@@ -154,7 +206,7 @@ impl crate::AgentAlgorithm for AllowAllAlgorithm {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{Event, Packet, PacketSpec};
+    use crate::{Event, Packet, PacketSpec, WorldGrid};
 
     fn event_for(agent_id: u32, packet_seq: u32, deliver_tick: u64) -> Event {
         let packet = Packet::from_spec(PacketSpec {
@@ -324,5 +376,71 @@ mod tests {
         assert_eq!(events[0].agent_id, 0);
         assert_eq!(events[0].packet_seq, 5);
         assert_eq!(events[0].payload, packet);
+    }
+
+    #[test]
+    fn pipeline_drops_events_when_world_noise_exceeds_threshold() {
+        let mut pipeline = SimPipeline::new(1);
+        pipeline.agents.pos_x[0] = 0.5;
+        pipeline.agents.pos_y[0] = 0.5;
+        pipeline.set_world_noise_drop_threshold(0.5);
+
+        let grid = WorldGrid {
+            width: 1,
+            height: 1,
+            cell_size: 1.0,
+            cells: vec![crate::WorldCell {
+                load: 0.0,
+                noise: 1.0,
+                bandwidth: 1.0,
+                cost: 1.0,
+            }],
+        };
+        pipeline.set_world_grid(grid);
+
+        let packet = Packet::from_spec(PacketSpec {
+            packet_id: 1,
+            src_id: 0,
+            dst_id: 0,
+            created_tick: 0,
+            deliver_tick: pipeline.event_queue.current_tick(),
+            ttl: 2,
+            size_bytes: 1,
+            quality: 1.0,
+            meta: false,
+            route_hint: 0,
+        });
+        pipeline.event_queue.push(Event::packet(0, 1, packet));
+
+        pipeline.process_current_events();
+
+        assert_eq!(pipeline.stats.packets_drop, 1);
+        assert_eq!(pipeline.stats.packets_sent, 0);
+        assert_eq!(pipeline.stats.packets_recv, 0);
+    }
+
+    #[test]
+    fn pipeline_keeps_events_without_world_grid() {
+        let mut pipeline = SimPipeline::new(1);
+        pipeline.set_world_noise_drop_threshold(0.5);
+
+        let packet = Packet::from_spec(PacketSpec {
+            packet_id: 1,
+            src_id: 0,
+            dst_id: 0,
+            created_tick: 0,
+            deliver_tick: pipeline.event_queue.current_tick(),
+            ttl: 2,
+            size_bytes: 1,
+            quality: 1.0,
+            meta: false,
+            route_hint: 0,
+        });
+        pipeline.event_queue.push(Event::packet(0, 1, packet));
+
+        pipeline.process_current_events();
+
+        assert_eq!(pipeline.stats.packets_drop, 0);
+        assert_eq!(pipeline.stats.packets_recv, 1);
     }
 }

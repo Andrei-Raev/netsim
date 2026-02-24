@@ -186,6 +186,33 @@ impl WorldGrid {
         let index = y * self.width + x;
         self.cells.get_mut(index)
     }
+
+    /// Преобразует мировые координаты в индексы ячейки.
+    pub fn world_to_cell(&self, x: f32, y: f32) -> Option<(usize, usize)> {
+        if self.cell_size <= 0.0 {
+            return None;
+        }
+        if x < 0.0 || y < 0.0 {
+            return None;
+        }
+        let cell_x = (x / self.cell_size).floor() as i64;
+        let cell_y = (y / self.cell_size).floor() as i64;
+        if cell_x < 0 || cell_y < 0 {
+            return None;
+        }
+        let cell_x = cell_x as usize;
+        let cell_y = cell_y as usize;
+        if cell_x >= self.width || cell_y >= self.height {
+            return None;
+        }
+        Some((cell_x, cell_y))
+    }
+
+    /// Сэмплирует ячейку по мировым координатам.
+    pub fn sample(&self, x: f32, y: f32) -> Option<&WorldCell> {
+        let (cell_x, cell_y) = self.world_to_cell(x, y)?;
+        self.cell(cell_x, cell_y)
+    }
 }
 
 fn curve_value(points: &[(u64, f32)], tick: u64) -> f32 {
