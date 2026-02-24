@@ -94,12 +94,18 @@ impl SimPipeline {
     /// Обрабатывает события текущего тика и обновляет статистику.
     pub fn process_current_events(&mut self) {
         let events = self.event_queue.pop_current();
-        for event in events {
+        for mut event in events {
             let agent_index = event.agent_id as usize;
             if agent_index >= self.agents.len() {
                 self.stats.packets_drop += 1;
                 continue;
             }
+
+            if event.payload.ttl == 0 {
+                self.stats.packets_drop += 1;
+                continue;
+            }
+            event.payload.ttl = event.payload.ttl.saturating_sub(1);
 
             let memory = &mut self.agent_memory[agent_index];
             let routing = &mut self.routing_tables[agent_index];
@@ -204,6 +210,52 @@ mod tests {
         pipeline.process_current_events();
 
         assert_eq!(pipeline.stats.packets_drop, 1);
+    }
+
+    #[test]
+    fn pipeline_drops_events_with_zero_ttl() {
+        let mut pipeline = SimPipeline::new(1);
+        let packet = Packet::from_spec(PacketSpec {
+            packet_id: 1,
+            src_id: 0,
+            dst_id: 0,
+            created_tick: 0,
+            deliver_tick: pipeline.event_queue.current_tick(),
+            ttl: 0,
+            size_bytes: 1,
+            quality: 1.0,
+            meta: false,
+            route_hint: 0,
+        });
+        pipeline.event_queue.push(Event::packet(0, 1, packet));
+
+        pipeline.process_current_events();
+
+        assert_eq!(pipeline.stats.packets_drop, 1);
+        assert_eq!(pipeline.stats.packets_recv, 0);
+        assert_eq!(pipeline.stats.packets_sent, 0);
+    }
+
+    #[test]
+    fn pipeline_decrements_ttl_for_processed_events() {
+        let mut pipeline = SimPipeline::new(1);
+        let packet = Packet::from_spec(PacketSpec {
+            packet_id: 1,
+            src_id: 0,
+            dst_id: 0,
+            created_tick: 0,
+            deliver_tick: pipeline.event_queue.current_tick(),
+            ttl: 2,
+            size_bytes: 1,
+            quality: 1.0,
+            meta: false,
+            route_hint: 0,
+        });
+        pipeline.event_queue.push(Event::packet(0, 1, packet));
+
+        pipeline.process_current_events();
+
+        assert_eq!(pipeline.stats.packets_recv, 1);
     }
 
     #[test]

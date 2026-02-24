@@ -142,3 +142,36 @@
 CLI переводит `InitialEventFile` → `InitialEventSpec` и `PacketSpecFile` → `PacketSpec` (ядро) в `netsim-cli/src/app_config.rs::InitialEventFile::to_core()`.
 
 Ядро принимает итоговую структуру `SimConfig` в `netsim-core/src/config.rs` и использует её в `SimPipeline::from_config` для наполнения очереди событий.
+
+## Пример конфигурации (netsim.toml)
+
+```toml
+# Глобальные настройки
+
+debug = false
+
+[window]
+width_px = 1280
+height_px = 720
+
+[sim]
+agents_count = 2
+ticks = 5
+event_queue_window = 64
+
+[[sim.initial_events]]
+agent_id = 0
+packet_seq = 1
+
+[sim.initial_events.packet]
+packet_id = 1001
+src_id = 0
+dst_id = 1
+created_tick = 0
+deliver_tick = 0
+ttl = 2
+size_bytes = 256
+quality = 0.95
+meta = false
+route_hint = 0
+```
