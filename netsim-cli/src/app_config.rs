@@ -5,6 +5,13 @@ use serde::Deserialize;
 pub struct SystemConfig {
     pub window: netsim_screen::WindowConfig,
     pub debug: bool,
+    pub sim: SimConfigFile,
+}
+
+#[derive(Debug, Clone, Deserialize, Default)]
+pub struct SimConfigFile {
+    pub agents_count: u32,
+    pub ticks: u64,
 }
 
 impl SystemConfig {
@@ -13,6 +20,8 @@ impl SystemConfig {
             .set_default("debug", false)?
             .set_default("window.width_px", 1280)?
             .set_default("window.height_px", 720)?
+            .set_default("sim.agents_count", 0)?
+            .set_default("sim.ticks", 0)?
             .add_source(File::with_name("test_cfg").required(false))
             .add_source(Environment::with_prefix("NETSIM").separator("__"));
 

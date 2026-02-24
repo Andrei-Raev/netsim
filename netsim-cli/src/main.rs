@@ -16,8 +16,12 @@ fn main() -> Result<()> {
         cfg.window.width_px, cfg.window.height_px, cfg.debug
     );
 
-    let mut pipeline = netsim_core::SimPipeline::new(0);
-    let result = pipeline.run(netsim_core::SimConfig { ticks: 0 });
+    let sim_config = netsim_core::SimConfig {
+        agents_count: cfg.sim.agents_count,
+        ticks: cfg.sim.ticks,
+    };
+    let mut pipeline = netsim_core::SimPipeline::from_config(sim_config);
+    let result = pipeline.run(sim_config);
 
     info!(
         "Симуляция завершена: ticks={}, sent={}, recv={}, drop={}",
