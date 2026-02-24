@@ -1,6 +1,6 @@
 use crate::memory::MemoryId;
 
-/// Хранилище агентов в формате Structure-of-Arrays.
+/// Хранилище агентов в формате Structure-of-Arrays (SoA).
 #[derive(Debug, Clone)]
 pub struct AgentSoA {
     /// Стабильные идентификаторы агентов.
@@ -9,18 +9,30 @@ pub struct AgentSoA {
     pub alive: Vec<bool>,
     /// Признак статичности (не двигается).
     pub is_static: Vec<bool>,
+    /// Идентификатор типа агента.
+    pub type_id: Vec<u16>,
     /// Счетчик пакетов на агента для детерминизма.
     pub packet_seq: Vec<u32>,
     /// Позиция по X.
     pub pos_x: Vec<f32>,
     /// Позиция по Y.
     pub pos_y: Vec<f32>,
+    /// Скорость по X.
+    pub vel_x: Vec<f32>,
+    /// Скорость по Y.
+    pub vel_y: Vec<f32>,
     /// Целевая позиция по X.
     pub target_x: Vec<f32>,
     /// Целевая позиция по Y.
     pub target_y: Vec<f32>,
+    /// Ограничение скорости движения по целям.
+    pub self_speed: Vec<f32>,
     /// Текущий уровень энергии.
     pub energy: Vec<f32>,
+    /// Емкость памяти агента.
+    pub memory_cap: Vec<u32>,
+    /// Использованная память (кешированное значение).
+    pub mem_used: Vec<u32>,
     /// Параметр вычислительной мощности.
     pub compute_power: Vec<f32>,
     /// Параметр пропускной способности.
@@ -51,12 +63,18 @@ impl AgentSoA {
             agent_id,
             alive: vec![true; count],
             is_static: vec![false; count],
+            type_id: vec![0; count],
             packet_seq: vec![0; count],
             pos_x: vec![0.0; count],
             pos_y: vec![0.0; count],
+            vel_x: vec![0.0; count],
+            vel_y: vec![0.0; count],
             target_x: vec![0.0; count],
             target_y: vec![0.0; count],
+            self_speed: vec![0.0; count],
             energy: vec![0.0; count],
+            memory_cap: vec![0; count],
+            mem_used: vec![0; count],
             compute_power: vec![0.0; count],
             bandwidth: vec![0.0; count],
             packets_sent: vec![0; count],
@@ -68,12 +86,12 @@ impl AgentSoA {
         }
     }
 
-    /// Returns the number of agents stored in the SoA.
+    /// Возвращает количество агентов в SoA.
     pub fn len(&self) -> usize {
         self.agent_id.len()
     }
 
-    /// Returns true if there are no agents in the SoA.
+    /// Возвращает true, если агентов нет.
     pub fn is_empty(&self) -> bool {
         self.agent_id.is_empty()
     }
