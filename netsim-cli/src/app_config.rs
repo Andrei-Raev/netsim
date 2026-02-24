@@ -31,6 +31,13 @@ pub struct PacketSpecFile {
     pub route_hint: u32,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct SystemConfigFile {
+    pub debug: bool,
+    pub window: netsim_screen::WindowConfig,
+    pub sim: SimConfigFile,
+}
+
 #[derive(Debug, Clone, Deserialize, Default)]
 pub struct SimConfigFile {
     pub agents_count: u32,
@@ -49,10 +56,18 @@ impl SystemConfig {
             .set_default("sim.agents_count", 0)?
             .set_default("sim.ticks", 0)?
             .set_default("sim.event_queue_window", 64)?
-            .add_source(File::with_name("test_cfg").required(false))
+            .add_source(File::with_name("netsim.toml").required(false))
             .add_source(Environment::with_prefix("NETSIM").separator("__"));
 
         builder.build()?.try_deserialize()
+    }
+
+    pub fn snapshot(&self) -> SystemConfigFile {
+        SystemConfigFile {
+            debug: self.debug,
+            window: self.window,
+            sim: self.sim.clone(),
+        }
     }
 }
 
