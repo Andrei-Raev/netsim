@@ -1,6 +1,6 @@
 use crate::{
     AgentMemory, AgentRuntime, AgentSoA, AllowAllValidator, Event, EventQueue, EventQueueConfig,
-    RoutingTable, SimConfig, SimStats,
+    Packet, RoutingTable, SimConfig, SimStats,
 };
 
 /// Результат прогона симуляции.
@@ -51,9 +51,15 @@ impl SimPipeline {
     /// Создает пайплайн по конфигу ядра.
     pub fn from_config(config: SimConfig) -> Self {
         let runtime = AgentRuntime::new(Box::new(AllowAllAlgorithm), Box::new(AllowAllValidator));
-        let event_queue = EventQueue::new(EventQueueConfig {
+        let mut event_queue = EventQueue::new(EventQueueConfig {
             window_size: config.event_queue_window,
         });
+
+        for initial in &config.initial_events {
+            let packet = Packet::from_spec(initial.packet);
+            let event = Event::packet(initial.agent_id, initial.packet_seq, packet);
+            event_queue.push(event);
+        }
 
         Self {
             agents: AgentSoA::new(config.agents_count as usize),
@@ -206,9 +212,55 @@ mod tests {
             agents_count: 1,
             ticks: 1,
             event_queue_window: 3,
+            initial_events: Vec::new(),
         };
         let pipeline = SimPipeline::from_config(config);
 
         assert_eq!(pipeline.event_queue.window_size(), 3);
+    }
+
+    #[test]
+    fn pipeline_seeds_initial_events_from_config() {
+        let packet = Packet::from_spec(PacketSpec {
+            packet_id: 7,
+            src_id: 0,
+            dst_id: 0,
+            created_tick: 0,
+            deliver_tick: 0,
+            ttl: 1,
+            size_bytes: 1,
+            quality: 1.0,
+            meta: false,
+            route_hint: 0,
+        });
+        let config = SimConfig {
+            agents_count: 1,
+            ticks: 1,
+            event_queue_window: 4,
+            initial_events: vec![crate::InitialEventSpec {
+                agent_id: 0,
+                packet_seq: 5,
+                packet: PacketSpec {
+                    packet_id: 7,
+                    src_id: 0,
+                    dst_id: 0,
+                    created_tick: 0,
+                    deliver_tick: 0,
+                    ttl: 1,
+                    size_bytes: 1,
+                    quality: 1.0,
+                    meta: false,
+                    route_hint: 0,
+                },
+            }],
+        };
+
+        let mut pipeline = SimPipeline::from_config(config);
+        let events = pipeline.event_queue.pop_current();
+
+        assert_eq!(events.len(), 1);
+        assert_eq!(events[0].agent_id, 0);
+        assert_eq!(events[0].packet_seq, 5);
+        assert_eq!(events[0].payload, packet);
     }
 }

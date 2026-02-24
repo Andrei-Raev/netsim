@@ -1,6 +1,6 @@
 use netsim_core::{
-    AgentAlgorithm, AgentRuntime, AgentSoA, AllowAllValidator, Event, Packet, PacketSpec,
-    SimPipeline,
+    AgentAlgorithm, AgentRuntime, AgentSoA, AllowAllValidator, Event, InitialEventSpec, Packet,
+    PacketSpec, SimConfig, SimPipeline,
 };
 
 fn event_for(agent_id: u32, packet_seq: u32, deliver_tick: u64) -> Event {
@@ -80,4 +80,35 @@ fn pipeline_drops_events_for_missing_agent() {
     pipeline.process_current_events();
 
     assert_eq!(pipeline.stats.packets_drop, 1);
+}
+
+#[test]
+fn pipeline_accepts_initial_events_from_config() {
+    let config = SimConfig {
+        agents_count: 1,
+        ticks: 1,
+        event_queue_window: 2,
+        initial_events: vec![InitialEventSpec {
+            agent_id: 0,
+            packet_seq: 9,
+            packet: PacketSpec {
+                packet_id: 55,
+                src_id: 0,
+                dst_id: 0,
+                created_tick: 0,
+                deliver_tick: 0,
+                ttl: 1,
+                size_bytes: 1,
+                quality: 1.0,
+                meta: false,
+                route_hint: 0,
+            },
+        }],
+    };
+
+    let mut pipeline = SimPipeline::from_config(config);
+    pipeline.process_current_events();
+
+    assert_eq!(pipeline.stats.packets_recv, 1);
+    assert_eq!(pipeline.stats.packets_sent, 0);
 }

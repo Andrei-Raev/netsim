@@ -12,7 +12,7 @@ pub use agent::AgentSoA;
 pub use agent_runtime::{
     AgentAlgorithm, AgentMemory, AgentRuntime, AllowAllValidator, EventValidator, RoutingTable,
 };
-pub use config::SimConfig;
+pub use config::{InitialEventSpec, SimConfig};
 pub use event::{Event, EventKind};
 pub use event_queue::{EventQueue, EventQueueConfig};
 pub use memory::MemoryId;

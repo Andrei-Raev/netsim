@@ -20,8 +20,14 @@ fn main() -> Result<()> {
         agents_count: cfg.sim.agents_count,
         ticks: cfg.sim.ticks,
         event_queue_window: cfg.sim.event_queue_window,
+        initial_events: cfg
+            .sim
+            .initial_events
+            .iter()
+            .map(|event| event.to_core())
+            .collect(),
     };
-    let mut pipeline = netsim_core::SimPipeline::from_config(sim_config);
+    let mut pipeline = netsim_core::SimPipeline::from_config(sim_config.clone());
     let result = pipeline.run(sim_config);
 
     info!(
