@@ -6,10 +6,13 @@ use tracing::info;
 mod app_config;
 mod argparser;
 
+/// Строка таблицы для печати загруженной конфигурации.
 #[derive(Debug, Tabled)]
 struct ConfigRow {
+    /// Имя параметра из конфигурации.
     #[tabled(rename = "Параметр")]
     key: String,
+    /// Значение параметра в строковом виде.
     #[tabled(rename = "Значение")]
     value: String,
 }
@@ -53,6 +56,7 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// Печатает загруженный конфиг в виде таблицы.
 fn print_config(cfg: &app_config::SystemConfigFile) {
     let mut rows = vec![
         ConfigRow {
