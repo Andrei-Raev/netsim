@@ -59,6 +59,10 @@ pub struct AgentDescriptor {
     pub _pad: u16,
     /// Емкость памяти (общий лимит в байтах).
     pub memory_cap: u32,
+    /// Емкость таблицы маршрутизации (число записей).
+    pub routing_cap: u32,
+    /// Размер scratchpad в байтах.
+    pub scratch_cap: u32,
     /// Вычислительная мощность.
     pub compute_power: f32,
     /// Пропускная способность.
@@ -269,6 +273,8 @@ impl<'a> AgentMemoryBuilder<'a> {
             type_id: spec.type_id,
             _pad: 0,
             memory_cap,
+            routing_cap: spec.routing_cap,
+            scratch_cap: spec.scratch_cap,
             compute_power: spec.compute_power,
             bandwidth: spec.bandwidth,
             self_speed: spec.self_speed,
@@ -355,6 +361,19 @@ impl<'a> AgentMemoryBlockMut<'a> {
         *target = descriptor;
     }
 
+    /// Обновляет настройки производительности агента в дескрипторе.
+    pub fn update_descriptor_params(
+        &mut self,
+        compute_power: f32,
+        bandwidth: f32,
+        self_speed: f32,
+    ) {
+        let descriptor = self.descriptor_mut();
+        descriptor.compute_power = compute_power;
+        descriptor.bandwidth = bandwidth;
+        descriptor.self_speed = self_speed;
+    }
+
     /// Возвращает таблицу маршрутизации (mutable).
     pub fn routing_table_mut(&mut self) -> RoutingTableViewMut<'_> {
         let header = self.header();
@@ -384,6 +403,12 @@ impl<'a> AgentMemoryBlockMut<'a> {
         let offset = header.offsets[2] as usize;
         let end = offset + header.scratch_len as usize;
         &mut self.data[offset..end]
+    }
+
+    /// Очищает scratchpad (заполняет нулями).
+    pub fn clear_scratchpad(&mut self) {
+        let scratch = self.scratchpad_mut();
+        scratch.fill(0);
     }
 }
 
