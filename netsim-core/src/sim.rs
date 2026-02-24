@@ -1,11 +1,4 @@
-use crate::{AgentSoA, SimStats};
-
-/// Конфигурация цикла симуляции на CPU.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct SimConfig {
-    /// Количество тиков для прогона.
-    pub ticks: u64,
-}
+use crate::{AgentSoA, SimConfig, SimStats};
 
 /// Результат прогона симуляции.
 #[derive(Debug, Clone)]
@@ -35,6 +28,11 @@ impl SimPipeline {
             stats: SimStats::default(),
             current_tick: 0,
         }
+    }
+
+    /// Создает пайплайн по конфигу ядра.
+    pub fn from_config(config: SimConfig) -> Self {
+        Self::new(config.agents_count as usize)
     }
 
     /// Выполняет один тик симуляции.
