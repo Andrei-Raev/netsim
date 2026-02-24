@@ -1,46 +1,46 @@
 use crate::memory::MemoryId;
 
-/// Structure-of-arrays storage for all agents.
+/// Хранилище агентов в формате Structure-of-Arrays.
 #[derive(Debug, Clone)]
 pub struct AgentSoA {
-    /// Stable agent ids.
+    /// Стабильные идентификаторы агентов.
     pub agent_id: Vec<u32>,
-    /// Alive flag per agent.
+    /// Флаг активности агента.
     pub alive: Vec<bool>,
-    /// Whether the agent is static and does not move.
+    /// Признак статичности (не двигается).
     pub is_static: Vec<bool>,
-    /// Per-agent packet sequence counter.
+    /// Счетчик пакетов на агента для детерминизма.
     pub packet_seq: Vec<u32>,
-    /// Position X coordinate.
+    /// Позиция по X.
     pub pos_x: Vec<f32>,
-    /// Position Y coordinate.
+    /// Позиция по Y.
     pub pos_y: Vec<f32>,
-    /// Target X coordinate.
+    /// Целевая позиция по X.
     pub target_x: Vec<f32>,
-    /// Target Y coordinate.
+    /// Целевая позиция по Y.
     pub target_y: Vec<f32>,
-    /// Current energy level.
+    /// Текущий уровень энергии.
     pub energy: Vec<f32>,
-    /// Compute power parameter.
+    /// Параметр вычислительной мощности.
     pub compute_power: Vec<f32>,
-    /// Bandwidth parameter.
+    /// Параметр пропускной способности.
     pub bandwidth: Vec<f32>,
-    /// Total packets sent by agent.
+    /// Количество отправленных пакетов.
     pub packets_sent: Vec<u64>,
-    /// Total packets received by agent.
+    /// Количество полученных пакетов.
     pub packets_recv: Vec<u64>,
-    /// Total packets dropped by agent.
+    /// Количество дропнутых пакетов.
     pub packets_drop: Vec<u64>,
-    /// Meta packets sent by agent.
+    /// Количество служебных отправленных пакетов.
     pub meta_packets_sent: Vec<u64>,
-    /// Meta packets received by agent.
+    /// Количество служебных полученных пакетов.
     pub meta_packets_recv: Vec<u64>,
-    /// Memory block id for agent-owned data.
+    /// Идентификатор блока памяти агента.
     pub memory_id: Vec<MemoryId>,
 }
 
 impl AgentSoA {
-    /// Creates a new SoA with a fixed number of agents.
+    /// Создает SoA с фиксированным числом агентов.
     pub fn new(count: usize) -> Self {
         let mut agent_id = Vec::with_capacity(count);
         for id in 0..count {

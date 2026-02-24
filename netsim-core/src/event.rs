@@ -1,31 +1,31 @@
 use crate::packet::Packet;
 
-/// Event kinds supported by the simulator core.
+/// Типы событий, поддерживаемые ядром симулятора.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EventKind {
-    /// Packet delivery event.
+    /// Событие доставки пакета.
     Packet,
-    /// System-level maintenance event.
+    /// Системное сервисное событие.
     System,
-    /// Control or orchestration event.
+    /// Управляющее/оркестрационное событие.
     Control,
 }
 
-/// Deterministic event envelope stored in the queue.
+/// Детерминированный контейнер события для очереди.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Event {
-    /// Event category.
+    /// Категория события.
     pub kind: EventKind,
-    /// Agent that receives or owns this event.
+    /// Агент, который получает или владеет событием.
     pub agent_id: u32,
-    /// Per-agent packet sequence used for deterministic ordering.
+    /// Счетчик пакетов на агента для детерминизма.
     pub packet_seq: u32,
-    /// Packet payload for packet events.
+    /// Полезная нагрузка для пакетных событий.
     pub payload: Packet,
 }
 
 impl Event {
-    /// Creates a packet event bound to an agent and sequence.
+    /// Создает пакетное событие для агента и номера последовательности.
     pub fn packet(agent_id: u32, packet_seq: u32, payload: Packet) -> Self {
         Self {
             kind: EventKind::Packet,
@@ -35,7 +35,7 @@ impl Event {
         }
     }
 
-    /// Returns the deterministic ordering key for the event.
+    /// Возвращает ключ детерминированного порядка событий.
     pub fn sort_key(&self) -> (u64, u32, u32) {
         (self.payload.deliver_tick, self.agent_id, self.packet_seq)
     }

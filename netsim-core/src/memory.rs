@@ -1,14 +1,14 @@
-/// Identifier for an agent-owned memory block in the global memory pool.
+/// Идентификатор блока памяти агента в общем пуле.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct MemoryId {
-    /// Base offset in the pool.
+    /// Базовый оффсет в пуле.
     pub base: u32,
-    /// Length of the block in bytes.
+    /// Длина блока в байтах.
     pub len: u32,
 }
 
 impl MemoryId {
-    /// Creates a new memory id pointing to a block in the pool.
+    /// Создает новый идентификатор блока в пуле.
     pub fn new(base: u32, len: u32) -> Self {
         Self { base, len }
     }

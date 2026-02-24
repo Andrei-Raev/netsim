@@ -1,59 +1,59 @@
-/// Core packet payload that is delivered as an event.
+/// Полезная нагрузка пакета, доставляемая как событие.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Packet {
-    /// Globally unique packet id.
+    /// Глобально уникальный идентификатор пакета.
     pub packet_id: u64,
-    /// Source agent id.
+    /// Идентификатор исходного агента.
     pub src_id: u32,
-    /// Destination agent id.
+    /// Идентификатор целевого агента.
     pub dst_id: u32,
-    /// Tick at which the packet was created.
+    /// Тик, в который пакет создан.
     pub created_tick: u64,
-    /// Tick at which the packet must be delivered.
+    /// Тик, в который пакет должен быть доставлен.
     pub deliver_tick: u64,
-    /// Time-to-live value for the packet.
+    /// TTL для пакета.
     pub ttl: u16,
-    /// Packet size in bytes.
+    /// Размер пакета в байтах.
     pub size_bytes: u32,
-    /// Signal quality or noise indicator.
+    /// Показатель качества/шума сигнала.
     pub quality: f32,
-    /// Whether the packet is service/meta traffic.
+    /// Признак служебного пакета.
     pub meta: bool,
-    /// Hop count accumulated so far.
+    /// Количество пройденных хопов.
     pub hop_count: u16,
-    /// Payload tag for higher-level routing.
+    /// Тег полезной нагрузки для маршрутизации.
     pub payload_tag: u16,
-    /// Next hop hint reserved for future routing logic.
+    /// Подсказка следующего хопа для будущей логики.
     pub route_hint: u32,
 }
 
-/// Required fields used to build a packet deterministically.
+/// Набор обязательных полей для детерминированной сборки пакета.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct PacketSpec {
-    /// Globally unique packet id.
+    /// Глобально уникальный идентификатор пакета.
     pub packet_id: u64,
-    /// Source agent id.
+    /// Идентификатор исходного агента.
     pub src_id: u32,
-    /// Destination agent id.
+    /// Идентификатор целевого агента.
     pub dst_id: u32,
-    /// Tick at which the packet was created.
+    /// Тик, в который пакет создан.
     pub created_tick: u64,
-    /// Tick at which the packet must be delivered.
+    /// Тик, в который пакет должен быть доставлен.
     pub deliver_tick: u64,
-    /// Time-to-live value for the packet.
+    /// TTL для пакета.
     pub ttl: u16,
-    /// Packet size in bytes.
+    /// Размер пакета в байтах.
     pub size_bytes: u32,
-    /// Signal quality or noise indicator.
+    /// Показатель качества/шума сигнала.
     pub quality: f32,
-    /// Whether the packet is service/meta traffic.
+    /// Признак служебного пакета.
     pub meta: bool,
-    /// Next hop hint reserved for future routing logic.
+    /// Подсказка следующего хопа для будущей логики.
     pub route_hint: u32,
 }
 
 impl Packet {
-    /// Builds a packet from a required field set.
+    /// Собирает пакет из обязательного набора полей.
     pub fn from_spec(spec: PacketSpec) -> Self {
         Self {
             packet_id: spec.packet_id,
