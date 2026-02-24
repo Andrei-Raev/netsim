@@ -12,6 +12,7 @@ pub struct SystemConfig {
 pub struct SimConfigFile {
     pub agents_count: u32,
     pub ticks: u64,
+    pub event_queue_window: u64,
 }
 
 impl SystemConfig {
@@ -22,6 +23,7 @@ impl SystemConfig {
             .set_default("window.height_px", 720)?
             .set_default("sim.agents_count", 0)?
             .set_default("sim.ticks", 0)?
+            .set_default("sim.event_queue_window", 64)?
             .add_source(File::with_name("test_cfg").required(false))
             .add_source(Environment::with_prefix("NETSIM").separator("__"));
 

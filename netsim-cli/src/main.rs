@@ -19,6 +19,7 @@ fn main() -> Result<()> {
     let sim_config = netsim_core::SimConfig {
         agents_count: cfg.sim.agents_count,
         ticks: cfg.sim.ticks,
+        event_queue_window: cfg.sim.event_queue_window,
     };
     let mut pipeline = netsim_core::SimPipeline::from_config(sim_config);
     let result = pipeline.run(sim_config);
