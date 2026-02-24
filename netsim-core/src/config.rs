@@ -1,7 +1,6 @@
 // Тут хранятся конфиги и прочее для работы
 
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct SimulateConfig {
-    agents_count: i8
+    pub agents_count: u32,
 }

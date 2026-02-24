@@ -12,3 +12,4 @@ console = "0.16"
 dialoguer = { version = "0.12", default-features = false }
 tabled = "0.20"
 config = "0.15.19"
+serde = { version = "1.0", features = ["derive"] }

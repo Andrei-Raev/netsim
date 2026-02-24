@@ -1,13 +1,14 @@
-use netsim_core;
 use clap::Parser;
 
-mod argparser;
 mod app_config;
+mod argparser;
 
 fn main() {
-    let cli = argparser::Cli::parse();
-    println!("Hello, world!");
-    println!("{}", netsim_core::add(1, cli.data as u64));
-    let cfg = app_config::SystemConfig::new();
-    print!("{}", cfg.unwrap().debug)
+    let _cli = argparser::Cli::parse();
+    let cfg = app_config::SystemConfig::new().expect("failed to load config");
+
+    println!(
+        "Netsim CLI: window={}x{}, debug={}",
+        cfg.window.width_px, cfg.window.height_px, cfg.debug
+    );
 }
