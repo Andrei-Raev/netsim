@@ -1,6 +1,6 @@
 use crate::{
-    AgentMemory, AgentRuntime, AgentSoA, AllowAllValidator, Event, EventQueue, EventQueueConfig,
-    Packet, RoutingTable, SimConfig, SimStats,
+    AgentMemory, AgentMemoryArena, AgentRuntime, AgentSoA, AllowAllValidator, Event, EventQueue,
+    EventQueueConfig, Packet, SimConfig, SimStats,
 };
 
 /// Результат прогона симуляции.
@@ -25,10 +25,8 @@ pub struct SimPipeline {
     pub event_queue: EventQueue,
     /// Runtime агентов.
     pub runtime: AgentRuntime,
-    /// Память агентов.
-    pub agent_memory: Vec<AgentMemory>,
-    /// Таблицы маршрутизации агентов.
-    pub routing_tables: Vec<RoutingTable>,
+    /// Общий пул памяти агентов.
+    pub memory_arena: AgentMemoryArena,
 }
 
 impl SimPipeline {
@@ -36,15 +34,22 @@ impl SimPipeline {
     pub fn new(agent_count: usize) -> Self {
         let runtime = AgentRuntime::new(Box::new(AllowAllAlgorithm), Box::new(AllowAllValidator));
         let event_queue = EventQueue::new(EventQueueConfig { window_size: 64 });
+        let mut memory_arena = AgentMemoryArena::new();
+        let mut agents = AgentSoA::new(agent_count);
+
+        let mut builder = crate::AgentBuilder::new(&mut memory_arena);
+        for index in 0..agent_count {
+            let spec = crate::AgentSpec::placeholder(index as u32);
+            builder.build(&mut agents, index, spec);
+        }
 
         Self {
-            agents: AgentSoA::new(agent_count),
+            agents,
             stats: SimStats::default(),
             current_tick: 0,
             event_queue,
             runtime,
-            agent_memory: vec![AgentMemory::default(); agent_count],
-            routing_tables: vec![RoutingTable::default(); agent_count],
+            memory_arena,
         }
     }
 
@@ -54,6 +59,14 @@ impl SimPipeline {
         let mut event_queue = EventQueue::new(EventQueueConfig {
             window_size: config.event_queue_window,
         });
+        let mut memory_arena = AgentMemoryArena::new();
+        let mut agents = AgentSoA::new(config.agents_count as usize);
+
+        let mut builder = crate::AgentBuilder::new(&mut memory_arena);
+        for index in 0..config.agents_count as usize {
+            let spec = crate::AgentSpec::placeholder(index as u32);
+            builder.build(&mut agents, index, spec);
+        }
 
         for initial in &config.initial_events {
             let packet = Packet::from_spec(initial.packet);
@@ -62,13 +75,12 @@ impl SimPipeline {
         }
 
         Self {
-            agents: AgentSoA::new(config.agents_count as usize),
+            agents,
             stats: SimStats::default(),
             current_tick: 0,
             event_queue,
             runtime,
-            agent_memory: vec![AgentMemory::default(); config.agents_count as usize],
-            routing_tables: vec![RoutingTable::default(); config.agents_count as usize],
+            memory_arena,
         }
     }
 
@@ -107,11 +119,11 @@ impl SimPipeline {
             }
             event.payload.ttl = event.payload.ttl.saturating_sub(1);
 
-            let memory = &mut self.agent_memory[agent_index];
-            let routing = &mut self.routing_tables[agent_index];
+            let id = self.agents.memory_id[agent_index];
+            let mut memory = AgentMemory::new(&mut self.memory_arena, id);
             let outgoing =
                 self.runtime
-                    .handle_event(agent_index, &self.agents, memory, routing, &event);
+                    .handle_event(agent_index, &self.agents, &mut memory, &event);
 
             if let Some(outgoing_event) = outgoing {
                 self.stats.packets_sent += 1;
@@ -133,7 +145,6 @@ impl crate::AgentAlgorithm for AllowAllAlgorithm {
         _agent_index: usize,
         _agents: &AgentSoA,
         _memory: &mut AgentMemory,
-        _routing: &mut RoutingTable,
         _event: &Event,
     ) -> Option<Event> {
         None
@@ -171,7 +182,6 @@ mod tests {
             agent_index: usize,
             agents: &AgentSoA,
             _memory: &mut AgentMemory,
-            _routing: &mut RoutingTable,
             event: &Event,
         ) -> Option<Event> {
             let agent_id = agents.agent_id[agent_index];

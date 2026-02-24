@@ -1,4 +1,101 @@
-use crate::memory::MemoryId;
+use crate::memory::{AgentMemoryArena, AgentMemoryBuilder, AgentMemorySpec, MemoryId};
+
+/// Спецификация агента, используемая при построении.
+#[derive(Debug, Clone, Copy)]
+pub struct AgentSpec {
+    /// Идентификатор агента.
+    pub agent_id: u32,
+    /// Идентификатор типа агента.
+    pub type_id: u16,
+    /// Емкость таблицы маршрутизации.
+    pub routing_cap: u32,
+    /// Размер scratchpad в байтах.
+    pub scratch_cap: u32,
+    /// Вычислительная мощность.
+    pub compute_power: f32,
+    /// Пропускная способность.
+    pub bandwidth: f32,
+    /// Ограничение скорости движения.
+    pub self_speed: f32,
+    /// Явно заданная емкость памяти (0 = вычислить автоматически).
+    pub memory_cap: u32,
+}
+
+impl AgentSpec {
+    /// Создает временный spec без данных генератора мира.
+    pub fn placeholder(agent_id: u32) -> Self {
+        Self {
+            agent_id,
+            type_id: 0,
+            routing_cap: 8,
+            scratch_cap: 64,
+            compute_power: 0.0,
+            bandwidth: 0.0,
+            self_speed: 0.0,
+            memory_cap: 0,
+        }
+    }
+}
+
+/// Фабрика для создания агента и его памяти.
+pub struct AgentBuilder<'a> {
+    memory_builder: AgentMemoryBuilder<'a>,
+}
+
+impl<'a> AgentBuilder<'a> {
+    /// Создает билдер агента на базе общего пула памяти.
+    pub fn new(arena: &'a mut AgentMemoryArena) -> Self {
+        Self {
+            memory_builder: AgentMemoryBuilder::new(arena),
+        }
+    }
+
+    /// Создает память агента, заполняет SoA и возвращает MemoryId.
+    pub fn build(&mut self, agents: &mut AgentSoA, index: usize, spec: AgentSpec) -> MemoryId {
+        let (memory_id, layout) = self.memory_builder.build(AgentMemorySpec {
+            routing_cap: spec.routing_cap,
+            scratch_cap: spec.scratch_cap,
+            compute_power: spec.compute_power,
+            bandwidth: spec.bandwidth,
+            self_speed: spec.self_speed,
+            agent_id: spec.agent_id,
+            type_id: spec.type_id,
+            memory_cap: spec.memory_cap,
+        });
+
+        let memory_cap = if spec.memory_cap == 0 {
+            layout.total_len
+        } else {
+            spec.memory_cap
+        };
+
+        agents.agent_id[index] = spec.agent_id;
+        agents.alive[index] = true;
+        agents.is_static[index] = false;
+        agents.type_id[index] = spec.type_id;
+        agents.packet_seq[index] = 0;
+        agents.pos_x[index] = 0.0;
+        agents.pos_y[index] = 0.0;
+        agents.vel_x[index] = 0.0;
+        agents.vel_y[index] = 0.0;
+        agents.target_x[index] = 0.0;
+        agents.target_y[index] = 0.0;
+        agents.self_speed[index] = spec.self_speed;
+        agents.energy[index] = 0.0;
+        agents.memory_cap[index] = memory_cap;
+        agents.mem_used[index] = 0;
+        agents.compute_power[index] = spec.compute_power;
+        agents.bandwidth[index] = spec.bandwidth;
+        agents.packets_sent[index] = 0;
+        agents.packets_recv[index] = 0;
+        agents.packets_drop[index] = 0;
+        agents.meta_packets_sent[index] = 0;
+        agents.meta_packets_recv[index] = 0;
+        agents.memory_id[index] = memory_id;
+
+        memory_id
+    }
+}
 
 /// Хранилище агентов в формате Structure-of-Arrays (SoA).
 #[derive(Debug, Clone)]

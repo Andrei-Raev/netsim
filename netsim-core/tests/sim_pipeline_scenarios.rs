@@ -31,7 +31,6 @@ impl AgentAlgorithm for EmitThenStop {
         agent_index: usize,
         agents: &AgentSoA,
         _memory: &mut netsim_core::AgentMemory,
-        _routing: &mut netsim_core::RoutingTable,
         event: &Event,
     ) -> Option<Event> {
         let left = self.remaining.load(std::sync::atomic::Ordering::Relaxed);

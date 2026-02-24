@@ -1,17 +1,67 @@
-use crate::{AgentSoA, Event, MemoryId};
+use crate::{AgentMemoryArena, AgentMemoryBlockMut, AgentSoA, Event, MemoryId, RouteEntry};
+use std::marker::PhantomData;
 
-/// Память агента (notes) — заглушка для этапа 0.
-#[derive(Debug, Default, Clone)]
-pub struct AgentMemory {
+/// Память агента: доступ к его блоку в общем пуле.
+#[derive(Debug)]
+pub struct AgentMemory<'a> {
     /// Идентификатор блока памяти.
     pub id: MemoryId,
+    /// Mutable view на блок памяти агента.
+    pub block: AgentMemoryBlockMut<'a>,
 }
 
-/// Симулируемая таблица маршрутизации — заглушка для этапа 0.
-#[derive(Debug, Default, Clone)]
-pub struct RoutingTable {
-    /// Количество записей в таблице.
-    pub entries: u32,
+/// Таблица маршрутизации с доступом через raw‑указатели.
+#[derive(Debug)]
+pub struct RoutingTable<'a> {
+    entries_ptr: *mut RouteEntry,
+    entries_len: usize,
+    mem_used_ptr: *mut u32,
+    _marker: PhantomData<&'a mut [RouteEntry]>,
+}
+
+impl<'a> RoutingTable<'a> {
+    /// Возвращает емкость таблицы.
+    pub fn capacity(&self) -> u32 {
+        self.entries_len as u32
+    }
+
+    /// Возвращает число активных записей.
+    pub fn mem_used(&self) -> u32 {
+        unsafe { *self.mem_used_ptr }
+    }
+
+    /// Устанавливает число активных записей.
+    pub fn set_mem_used(&mut self, value: u32) {
+        unsafe {
+            *self.mem_used_ptr = value;
+        }
+    }
+
+    /// Возвращает mutable-доступ к записям таблицы.
+    pub fn entries_mut(&mut self) -> &mut [RouteEntry] {
+        unsafe { std::slice::from_raw_parts_mut(self.entries_ptr, self.entries_len) }
+    }
+}
+
+impl AgentMemory<'_> {
+    /// Создает доступ к памяти агента по его идентификатору.
+    pub fn new(arena: &mut AgentMemoryArena, id: MemoryId) -> AgentMemory<'_> {
+        AgentMemory {
+            id,
+            block: arena.block_mut(id),
+        }
+    }
+
+    /// Возвращает routing table view, привязанный к блоку памяти.
+    pub fn routing_table(&mut self) -> RoutingTable<'_> {
+        let (entries_ptr, entries_len, mem_used_ptr) = self.block.routing_table_ptrs();
+        RoutingTable {
+            entries_ptr,
+            entries_len,
+            mem_used_ptr,
+            _marker: PhantomData,
+        }
+    }
 }
 
 /// Интерфейс алгоритма обработки событий агентом.
@@ -22,7 +72,6 @@ pub trait AgentAlgorithm {
         agent_index: usize,
         agents: &AgentSoA,
         memory: &mut AgentMemory,
-        routing: &mut RoutingTable,
         event: &Event,
     ) -> Option<Event>;
 }
@@ -73,12 +122,11 @@ impl AgentRuntime {
         agent_index: usize,
         agents: &AgentSoA,
         memory: &mut AgentMemory,
-        routing: &mut RoutingTable,
         event: &Event,
     ) -> Option<Event> {
         let outgoing = self
             .algorithm
-            .eval_event(agent_index, agents, memory, routing, event);
+            .eval_event(agent_index, agents, memory, event);
 
         outgoing.filter(|candidate| self.validator.validate(agent_index, agents, candidate))
     }
@@ -98,7 +146,6 @@ mod tests {
             agent_index: usize,
             agents: &AgentSoA,
             _memory: &mut AgentMemory,
-            _routing: &mut RoutingTable,
             event: &Event,
         ) -> Option<Event> {
             let agent_id = agents.agent_id[agent_index];
@@ -143,11 +190,15 @@ mod tests {
             Box::new(AllowAllValidator::default()),
         );
         let agents = AgentSoA::new(1);
-        let mut memory = AgentMemory::default();
-        let mut routing = RoutingTable::default();
+        let mut arena = AgentMemoryArena::new();
+        let mut builder = crate::AgentMemoryBuilder::new(&mut arena);
+        let spec = crate::AgentMemorySpec::placeholder(0);
+        let (id, _) = builder.build(spec);
+        let mut memory = AgentMemory::new(&mut arena, id);
+        let _routing = memory.routing_table();
         let event = event_for(0, 1);
 
-        let outgoing = runtime.handle_event(0, &agents, &mut memory, &mut routing, &event);
+        let outgoing = runtime.handle_event(0, &agents, &mut memory, &event);
         assert!(outgoing.is_some());
     }
 
@@ -158,11 +209,14 @@ mod tests {
             Box::new(DenyValidator::default()),
         );
         let agents = AgentSoA::new(1);
-        let mut memory = AgentMemory::default();
-        let mut routing = RoutingTable::default();
+        let mut arena = AgentMemoryArena::new();
+        let mut builder = crate::AgentMemoryBuilder::new(&mut arena);
+        let spec = crate::AgentMemorySpec::placeholder(0);
+        let (id, _) = builder.build(spec);
+        let mut memory = AgentMemory::new(&mut arena, id);
         let event = event_for(0, 1);
 
-        let outgoing = runtime.handle_event(0, &agents, &mut memory, &mut routing, &event);
+        let outgoing = runtime.handle_event(0, &agents, &mut memory, &event);
         assert!(outgoing.is_none());
     }
 }

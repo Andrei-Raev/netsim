@@ -8,14 +8,17 @@ pub mod packet;
 pub mod sim;
 pub mod stats;
 
-pub use agent::AgentSoA;
+pub use agent::{AgentBuilder, AgentSoA, AgentSpec};
 pub use agent_runtime::{
     AgentAlgorithm, AgentMemory, AgentRuntime, AllowAllValidator, EventValidator, RoutingTable,
 };
 pub use config::{InitialEventSpec, SimConfig};
 pub use event::{Event, EventKind};
 pub use event_queue::{EventQueue, EventQueueConfig};
-pub use memory::MemoryId;
+pub use memory::{
+    AgentDescriptor, AgentMemoryArena, AgentMemoryBlock, AgentMemoryBlockMut, AgentMemoryBuilder,
+    AgentMemoryLayout, AgentMemorySpec, MemoryId, RouteEntry,
+};
 pub use packet::{Packet, PacketSpec};
 pub use sim::{SimPipeline, SimResult};
 pub use stats::SimStats;
