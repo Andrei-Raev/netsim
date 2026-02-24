@@ -1,5 +1,8 @@
 use super::{FieldSource, Vec2, WorldCell, WorldConfig, WorldGrid, apply_source};
 
+/// CPU‑референс генератора мира.
+///
+/// Stateless: каждый тик строит сетку заново из конфигурации и источников.
 #[derive(Debug, Clone, PartialEq)]
 pub struct CpuWorldGenerator {
     pub config: WorldConfig,
@@ -8,6 +11,7 @@ pub struct CpuWorldGenerator {
 }
 
 impl CpuWorldGenerator {
+    /// Создаёт генератор мира на CPU.
     pub fn new(config: WorldConfig, sources: Vec<FieldSource>, seed: u64) -> Self {
         Self {
             config,
@@ -16,6 +20,7 @@ impl CpuWorldGenerator {
         }
     }
 
+    /// Строит сетку мира для указанного тика.
     pub fn build_grid(&self, tick: u64) -> WorldGrid {
         let mut grid = WorldGrid {
             width: self.config.width,

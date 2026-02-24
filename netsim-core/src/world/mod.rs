@@ -1,7 +1,13 @@
+//! Модуль мира (CPU‑референс + типы для будущего GPU‑бэкенда).
+//!
+//! Цель: детерминированное, stateless‑описание мировых полей (load/noise/bandwidth/cost)
+//! с минимальным API, которое потом можно заменить GPU‑реализацией без ломки интерфейса.
+
 pub mod cpu;
 
 use std::fmt;
 
+/// 2D‑вектор в мировом пространстве.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vec2 {
     pub x: f32,
@@ -9,11 +15,13 @@ pub struct Vec2 {
 }
 
 impl Vec2 {
+    /// Создаёт вектор из координат.
     pub fn new(x: f32, y: f32) -> Self {
         Self { x, y }
     }
 }
 
+/// Тип поля мира, влияющий на сигнал (пакеты).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum WorldFieldType {
     Load,
@@ -22,14 +30,20 @@ pub enum WorldFieldType {
     Cost,
 }
 
+/// Тип функции влияния источника поля.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum InfluenceType {
+    /// Жёсткая маска: 1 внутри радиуса, иначе 0.
     Hard,
+    /// Линейный спад до нуля к границе.
     Linear,
+    /// Гауссово распределение вокруг центра.
     Gaussian,
+    /// Пользовательская детерминированная функция (через seed).
     Custom { scale: f32 },
 }
 
+/// Геометрия источника поля.
 #[derive(Debug, Clone, PartialEq)]
 pub enum FieldShape {
     Circle { center: Vec2, radius: f32 },
@@ -38,23 +52,24 @@ pub enum FieldShape {
     Spline { points: Vec<Vec2>, width: f32 },
 }
 
+/// Временной профиль источника.
 #[derive(Debug, Clone, PartialEq)]
 pub enum TimeProfile {
+    /// Постоянное влияние.
     Static,
-    Pulse {
-        period_ticks: u64,
-        duty: f32,
-    },
+    /// Периодический импульс (duty 0..1).
+    Pulse { period_ticks: u64, duty: f32 },
+    /// Волна с синусоидальным отклонением.
     Wave {
         period_ticks: u64,
         amplitude: f32,
         phase: f32,
     },
-    Curve {
-        points: Vec<(u64, f32)>,
-    },
+    /// Кусочно‑линейная кривая.
+    Curve { points: Vec<(u64, f32)> },
 }
 
+/// Окно активности источника (включительно).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ActiveWindow {
     pub start: u64,
@@ -62,11 +77,13 @@ pub struct ActiveWindow {
 }
 
 impl ActiveWindow {
+    /// Проверяет, активен ли источник на данном тике.
     pub fn is_active(&self, tick: u64) -> bool {
         tick >= self.start && tick <= self.end
     }
 }
 
+/// Источник поля мира (stateless).
 #[derive(Debug, Clone, PartialEq)]
 pub struct FieldSource {
     pub id: u64,
@@ -79,10 +96,12 @@ pub struct FieldSource {
 }
 
 impl FieldSource {
+    /// Проверяет, активен ли источник на данном тике.
     pub fn is_active(&self, tick: u64) -> bool {
         self.active_window.is_active(tick)
     }
 
+    /// Возвращает множитель времени для источника.
     pub fn time_multiplier(&self, tick: u64) -> f32 {
         match &self.time_profile {
             TimeProfile::Static => 1.0,
@@ -112,6 +131,7 @@ impl FieldSource {
     }
 }
 
+/// Базовые (фоновые) значения поля мира.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct WorldBase {
     pub load: f32,
@@ -120,6 +140,7 @@ pub struct WorldBase {
     pub cost: f32,
 }
 
+/// Конфигурация сетки мира.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct WorldConfig {
     pub width: usize,
@@ -128,6 +149,7 @@ pub struct WorldConfig {
     pub base: WorldBase,
 }
 
+/// Значения ячейки мира.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct WorldCell {
     pub load: f32,
@@ -136,6 +158,7 @@ pub struct WorldCell {
     pub cost: f32,
 }
 
+/// Результат генерации мира на текущем тике.
 #[derive(Debug, Clone, PartialEq)]
 pub struct WorldGrid {
     pub width: usize,
@@ -145,6 +168,7 @@ pub struct WorldGrid {
 }
 
 impl WorldGrid {
+    /// Возвращает ссылку на ячейку (или None, если индекс вне границ).
     pub fn cell(&self, x: usize, y: usize) -> Option<&WorldCell> {
         if x >= self.width || y >= self.height {
             return None;
@@ -153,6 +177,7 @@ impl WorldGrid {
         self.cells.get(index)
     }
 
+    /// Возвращает mutable‑ссылку на ячейку (или None, если индекс вне границ).
     pub fn cell_mut(&mut self, x: usize, y: usize) -> Option<&mut WorldCell> {
         if x >= self.width || y >= self.height {
             return None;
@@ -316,6 +341,7 @@ impl fmt::Display for WorldFieldType {
     }
 }
 
+/// Применяет один источник к ячейке (внутренний шаг генератора).
 pub(crate) fn apply_source(
     cell: &mut WorldCell,
     source: &FieldSource,

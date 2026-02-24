@@ -1,7 +1,7 @@
 use netsim_core::world::cpu::CpuWorldGenerator;
 use netsim_core::{
     ActiveWindow, FieldShape, FieldSource, InfluenceType, TimeProfile, Vec2, WorldBase,
-    WorldConfig, WorldFieldType,
+    WorldConfig, WorldFieldType, WorldGrid,
 };
 
 #[test]
@@ -181,4 +181,58 @@ fn time_profile_curve_interpolates_linearly() {
     let grid = generator.build_grid(5);
 
     assert!((grid.cells[0].load - 5.0).abs() < 1e-4);
+}
+
+#[test]
+fn pulse_profile_disables_when_duty_zero() {
+    let config = WorldConfig {
+        width: 1,
+        height: 1,
+        cell_size: 1.0,
+        base: WorldBase {
+            load: 0.0,
+            noise: 0.0,
+            bandwidth: 0.0,
+            cost: 0.0,
+        },
+    };
+
+    let source = FieldSource {
+        id: 3,
+        field_type: WorldFieldType::Load,
+        shape: FieldShape::Circle {
+            center: Vec2::new(0.5, 0.5),
+            radius: 10.0,
+        },
+        influence: InfluenceType::Hard,
+        strength: 10.0,
+        time_profile: TimeProfile::Pulse {
+            period_ticks: 10,
+            duty: 0.0,
+        },
+        active_window: ActiveWindow { start: 0, end: 10 },
+    };
+
+    let generator = CpuWorldGenerator::new(config, vec![source], 11);
+    let grid = generator.build_grid(5);
+
+    assert!(grid.cells[0].load.abs() < f32::EPSILON);
+}
+
+#[test]
+fn world_grid_cell_out_of_bounds_returns_none() {
+    let mut grid = WorldGrid {
+        width: 1,
+        height: 1,
+        cell_size: 1.0,
+        cells: vec![netsim_core::WorldCell {
+            load: 0.0,
+            noise: 0.0,
+            bandwidth: 0.0,
+            cost: 0.0,
+        }],
+    };
+
+    assert!(grid.cell(2, 0).is_none());
+    assert!(grid.cell_mut(0, 2).is_none());
 }
