@@ -19,9 +19,10 @@ impl CpuWorldGenerator {
             seed,
         }
     }
+}
 
-    /// Строит сетку мира для указанного тика.
-    pub fn build_grid(&self, tick: u64) -> WorldGrid {
+impl super::WorldGridGenerator for CpuWorldGenerator {
+    fn build_grid(&self, tick: u64) -> WorldGrid {
         let mut grid = WorldGrid {
             width: self.config.width,
             height: self.config.height,

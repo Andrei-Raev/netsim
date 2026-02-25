@@ -28,5 +28,5 @@ pub use world::agents_grid::AgentHashGrid;
 pub use world::scenes::{WorldScene, minimal_scene};
 pub use world::{
     ActiveWindow, FieldShape, FieldSource, InfluenceType, TimeProfile, Vec2, WorldBase, WorldCell,
-    WorldConfig, WorldFieldType, WorldGrid,
+    WorldConfig, WorldFieldType, WorldGrid, WorldGridGenerator,
 };

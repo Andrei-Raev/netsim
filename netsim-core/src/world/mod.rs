@@ -169,6 +169,12 @@ pub struct WorldGrid {
     pub cells: Vec<WorldCell>,
 }
 
+/// Интерфейс генератора сетки мира (CPU/GPU‑бэкенды).
+pub trait WorldGridGenerator {
+    /// Строит сетку мира на заданном тике.
+    fn build_grid(&self, tick: u64) -> WorldGrid;
+}
+
 impl WorldGrid {
     /// Возвращает ссылку на ячейку (или None, если индекс вне границ).
     pub fn cell(&self, x: usize, y: usize) -> Option<&WorldCell> {

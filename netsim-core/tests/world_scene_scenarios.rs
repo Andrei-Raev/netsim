@@ -1,5 +1,5 @@
 use netsim_core::world::cpu::CpuWorldGenerator;
-use netsim_core::{WorldFieldType, minimal_scene};
+use netsim_core::{WorldFieldType, WorldGridGenerator, minimal_scene};
 
 #[test]
 fn minimal_scene_generates_non_empty_grid() {

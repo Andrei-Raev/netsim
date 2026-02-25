@@ -1,7 +1,7 @@
 use netsim_core::world::cpu::CpuWorldGenerator;
 use netsim_core::{
     ActiveWindow, FieldShape, FieldSource, InfluenceType, TimeProfile, Vec2, WorldBase,
-    WorldConfig, WorldFieldType, WorldGrid,
+    WorldConfig, WorldFieldType, WorldGrid, WorldGridGenerator,
 };
 
 #[test]

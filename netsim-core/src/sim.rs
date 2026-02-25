@@ -1,6 +1,6 @@
 use crate::{
     AgentMemory, AgentMemoryArena, AgentRuntime, AgentSoA, AllowAllValidator, Event, EventQueue,
-    EventQueueConfig, Packet, SimConfig, SimStats, WorldGrid,
+    EventQueueConfig, Packet, SimConfig, SimStats, WorldGrid, WorldGridGenerator,
 };
 
 /// Результат прогона симуляции.
@@ -99,6 +99,19 @@ impl SimPipeline {
         self.event_queue.advance();
     }
 
+    /// Выполняет один тик симуляции вместе с генерацией мира.
+    pub fn step_with_world<G>(&mut self, generator: &G)
+    where
+        G: WorldGridGenerator,
+    {
+        let tick = self.event_queue.current_tick();
+        let grid = generator.build_grid(tick);
+        self.set_world_grid(grid);
+        self.process_current_events();
+        self.current_tick = tick;
+        self.event_queue.advance();
+    }
+
     /// Устанавливает сетку мира для текущего тика.
     pub fn set_world_grid(&mut self, grid: WorldGrid) {
         self.world_grid = Some(grid);
@@ -122,6 +135,21 @@ impl SimPipeline {
 
         SimResult {
             ticks_processed: config.ticks,
+            stats: self.stats.clone(),
+        }
+    }
+
+    /// Запускает симуляцию на заданное число тиков с генерацией мира.
+    pub fn run_with_world<G>(&mut self, ticks: u64, generator: &G) -> SimResult
+    where
+        G: WorldGridGenerator,
+    {
+        for _ in 0..ticks {
+            self.step_with_world(generator);
+        }
+
+        SimResult {
+            ticks_processed: ticks,
             stats: self.stats.clone(),
         }
     }
