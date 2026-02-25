@@ -6,7 +6,7 @@ use clap::Parser;
 #[command(author = "Раев Андрей Сергеевич")]
 #[command(version = "0.1")]
 pub struct Cli {
-    /// Зарезервированный параметр (временный, будет удалён).
-    #[arg(short, long, default_value_t = 0)]
-    pub data: i8,
+    /// Путь к файлу сценария (*.scenario.toml).
+    #[arg(short, long)]
+    pub scenario: Option<String>,
 }

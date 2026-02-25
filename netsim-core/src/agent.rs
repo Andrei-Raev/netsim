@@ -192,4 +192,63 @@ impl AgentSoA {
     pub fn is_empty(&self) -> bool {
         self.agent_id.is_empty()
     }
+
+    /// Увеличивает размер SoA на заданное число агентов.
+    pub fn extend(&mut self, additional: usize) {
+        if additional == 0 {
+            return;
+        }
+        let start = self.agent_id.len();
+        let new_len = start.saturating_add(additional);
+
+        self.agent_id.reserve(additional);
+        self.alive.reserve(additional);
+        self.is_static.reserve(additional);
+        self.type_id.reserve(additional);
+        self.packet_seq.reserve(additional);
+        self.pos_x.reserve(additional);
+        self.pos_y.reserve(additional);
+        self.vel_x.reserve(additional);
+        self.vel_y.reserve(additional);
+        self.target_x.reserve(additional);
+        self.target_y.reserve(additional);
+        self.self_speed.reserve(additional);
+        self.energy.reserve(additional);
+        self.memory_cap.reserve(additional);
+        self.mem_used.reserve(additional);
+        self.compute_power.reserve(additional);
+        self.bandwidth.reserve(additional);
+        self.packets_sent.reserve(additional);
+        self.packets_recv.reserve(additional);
+        self.packets_drop.reserve(additional);
+        self.meta_packets_sent.reserve(additional);
+        self.meta_packets_recv.reserve(additional);
+        self.memory_id.reserve(additional);
+
+        for id in start..new_len {
+            self.agent_id.push(id as u32);
+            self.alive.push(true);
+            self.is_static.push(false);
+            self.type_id.push(0);
+            self.packet_seq.push(0);
+            self.pos_x.push(0.0);
+            self.pos_y.push(0.0);
+            self.vel_x.push(0.0);
+            self.vel_y.push(0.0);
+            self.target_x.push(0.0);
+            self.target_y.push(0.0);
+            self.self_speed.push(0.0);
+            self.energy.push(0.0);
+            self.memory_cap.push(0);
+            self.mem_used.push(0);
+            self.compute_power.push(0.0);
+            self.bandwidth.push(0.0);
+            self.packets_sent.push(0);
+            self.packets_recv.push(0);
+            self.packets_drop.push(0);
+            self.meta_packets_sent.push(0);
+            self.meta_packets_recv.push(0);
+            self.memory_id.push(MemoryId::default());
+        }
+    }
 }

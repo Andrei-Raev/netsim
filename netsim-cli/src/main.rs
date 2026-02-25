@@ -5,6 +5,7 @@ use tracing::info;
 
 mod app_config;
 mod argparser;
+mod scenario_config;
 
 /// Строка таблицы для печати загруженной конфигурации.
 #[derive(Debug, Tabled)]
@@ -20,9 +21,15 @@ struct ConfigRow {
 fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
 
-    let _cli = argparser::Cli::parse();
+    let cli = argparser::Cli::parse();
     let cfg = app_config::SystemConfig::new()?;
     let cfg_snapshot = cfg.snapshot();
+
+    let scenario_path = cli
+        .scenario
+        .as_deref()
+        .unwrap_or("scenarios/default.scenario.toml");
+    let scenario = scenario_config::load_scenario(scenario_path)?;
 
     info!(
         "Netsim CLI: window={}x{}, debug={}",
@@ -31,19 +38,13 @@ fn main() -> Result<()> {
 
     print_config(&cfg_snapshot);
 
-    let sim_config = netsim_core::SimConfig {
-        agents_count: cfg.sim.agents_count,
-        ticks: cfg.sim.ticks,
-        event_queue_window: cfg.sim.event_queue_window,
-        initial_events: cfg
-            .sim
-            .initial_events
-            .iter()
-            .map(|event| event.to_core())
-            .collect(),
-    };
-    let mut pipeline = netsim_core::SimPipeline::from_config(sim_config.clone());
-    let result = pipeline.run(sim_config);
+    let mut pipeline = netsim_core::SimPipeline::from_scenario(&scenario);
+    let scene = scenario.build_scene();
+    let generator =
+        netsim_core::world::cpu::CpuWorldGenerator::new(scene.config, scene.sources, scene.seed);
+    let result = pipeline.run_with_scenario(&scenario, &generator);
+
+    let _legacy = cfg;
 
     info!(
         "Симуляция завершена: ticks={}, sent={}, recv={}, drop={}",

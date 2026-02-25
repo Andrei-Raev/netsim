@@ -103,6 +103,7 @@ impl SystemConfig {
 
 impl InitialEventFile {
     /// Преобразует CLI-конфиг в типы ядра симуляции.
+    #[allow(dead_code)]
     pub fn to_core(&self) -> InitialEventSpec {
         InitialEventSpec {
             agent_id: self.agent_id,

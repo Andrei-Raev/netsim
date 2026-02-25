@@ -2,6 +2,7 @@ use crate::{
     AgentMemory, AgentMemoryArena, AgentRuntime, AgentSoA, AllowAllValidator, Event, EventQueue,
     EventQueueConfig, Packet, SimConfig, SimStats, WorldGrid, WorldGridGenerator,
 };
+use crate::{ScenarioConfig, ScenarioEventSpec, SpawnShape, TrafficSpec};
 
 /// Результат прогона симуляции.
 #[derive(Debug, Clone)]
@@ -92,6 +93,27 @@ impl SimPipeline {
         }
     }
 
+    /// Создает пайплайн по сценарию симуляции.
+    pub fn from_scenario(config: &ScenarioConfig) -> Self {
+        let runtime = AgentRuntime::new(Box::new(AllowAllAlgorithm), Box::new(AllowAllValidator));
+        let event_queue = EventQueue::new(EventQueueConfig {
+            window_size: config.event_queue_window,
+        });
+        let memory_arena = AgentMemoryArena::new();
+        let agents = AgentSoA::new(0);
+
+        Self {
+            agents,
+            stats: SimStats::default(),
+            current_tick: 0,
+            event_queue,
+            runtime,
+            memory_arena,
+            world_grid: None,
+            world_noise_drop_threshold: config.noise_drop_threshold,
+        }
+    }
+
     /// Выполняет один тик симуляции.
     pub fn step(&mut self) {
         self.process_current_events();
@@ -105,6 +127,20 @@ impl SimPipeline {
         G: WorldGridGenerator,
     {
         let tick = self.event_queue.current_tick();
+        let grid = generator.build_grid(tick);
+        self.set_world_grid(grid);
+        self.process_current_events();
+        self.current_tick = tick;
+        self.event_queue.advance();
+    }
+
+    /// Выполняет один тик сценария: применяет события и обрабатывает очередь.
+    pub fn step_with_scenario<G>(&mut self, scenario: &ScenarioConfig, generator: &G)
+    where
+        G: WorldGridGenerator,
+    {
+        let tick = self.event_queue.current_tick();
+        self.apply_scenario_tick(scenario, tick);
         let grid = generator.build_grid(tick);
         self.set_world_grid(grid);
         self.process_current_events();
@@ -154,6 +190,21 @@ impl SimPipeline {
         }
     }
 
+    /// Запускает сценарий на заданное число тиков.
+    pub fn run_with_scenario<G>(&mut self, scenario: &ScenarioConfig, generator: &G) -> SimResult
+    where
+        G: WorldGridGenerator,
+    {
+        for _ in 0..scenario.ticks {
+            self.step_with_scenario(scenario, generator);
+        }
+
+        SimResult {
+            ticks_processed: scenario.ticks,
+            stats: self.stats.clone(),
+        }
+    }
+
     /// Обрабатывает события текущего тика и обновляет статистику.
     pub fn process_current_events(&mut self) {
         let events = self.event_queue.pop_current();
@@ -189,6 +240,112 @@ impl SimPipeline {
                 self.stats.packets_recv += 1;
             }
         }
+    }
+
+    fn apply_scenario_tick(&mut self, scenario: &ScenarioConfig, tick: u64) {
+        for event in scenario.events_for_tick(tick) {
+            match event {
+                ScenarioEventSpec::SpawnAgents(spec) => {
+                    self.apply_spawn_event(spec);
+                }
+                ScenarioEventSpec::Traffic(spec) => {
+                    self.apply_traffic_event(tick, spec);
+                }
+            }
+        }
+    }
+
+    fn apply_spawn_event(&mut self, spec: crate::SpawnAgentsSpec) {
+        if spec.count == 0 {
+            return;
+        }
+        let start_index = self.agents.len();
+        let count = spec.count as usize;
+        self.agents.extend(count);
+
+        let mut builder = crate::AgentBuilder::new(&mut self.memory_arena);
+        for index in 0..count {
+            let agent_id = spec.agent_id_start.saturating_add(index as u32);
+            let spec = spec.spec_for_index(agent_id);
+            builder.build(&mut self.agents, start_index + index, spec);
+        }
+
+        self.apply_spawn_positions(spec, start_index, count);
+    }
+
+    fn apply_spawn_positions(
+        &mut self,
+        spec: crate::SpawnAgentsSpec,
+        start_index: usize,
+        count: usize,
+    ) {
+        match spec.shape {
+            SpawnShape::Grid {
+                rows,
+                cols,
+                spacing,
+                origin_x,
+                origin_y,
+            } => {
+                let _rows = rows.max(1) as usize;
+                let cols = cols.max(1) as usize;
+                for index in 0..count {
+                    let row = index / cols;
+                    let col = index % cols;
+                    let x = origin_x + col as f32 * spacing;
+                    let y = origin_y + row as f32 * spacing;
+                    let agent_index = start_index + index;
+                    if agent_index < self.agents.len() {
+                        self.agents.pos_x[agent_index] = x;
+                        self.agents.pos_y[agent_index] = y;
+                    }
+                }
+            }
+            SpawnShape::Circle {
+                center_x,
+                center_y,
+                radius,
+            } => {
+                let total = count.max(1) as f32;
+                for index in 0..count {
+                    let t = index as f32 / total;
+                    let angle = std::f32::consts::TAU * t;
+                    let x = center_x + radius * angle.cos();
+                    let y = center_y + radius * angle.sin();
+                    let agent_index = start_index + index;
+                    if agent_index < self.agents.len() {
+                        self.agents.pos_x[agent_index] = x;
+                        self.agents.pos_y[agent_index] = y;
+                    }
+                }
+            }
+        }
+    }
+
+    fn apply_traffic_event(&mut self, tick: u64, spec: TrafficSpec) {
+        let packet = Packet::from_spec(crate::PacketSpec {
+            packet_id: spec.packet_id,
+            src_id: spec.src_id,
+            dst_id: spec.dst_id,
+            created_tick: tick,
+            deliver_tick: tick,
+            ttl: spec.ttl,
+            size_bytes: spec.size_bytes,
+            quality: spec.quality,
+            meta: spec.meta,
+            route_hint: spec.route_hint,
+        });
+
+        let agent_index = spec.src_id as usize;
+        if agent_index >= self.agents.len() {
+            self.stats.packets_drop += 1;
+            return;
+        }
+
+        let packet_seq = self.agents.packet_seq[agent_index];
+        self.agents.packet_seq[agent_index] = packet_seq.saturating_add(1);
+        let event = Event::packet(spec.src_id, packet_seq, packet);
+        self.event_queue.push(event);
     }
 
     fn should_drop_by_world(&self, event: &Event) -> bool {

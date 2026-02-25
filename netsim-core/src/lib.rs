@@ -5,6 +5,7 @@ pub mod event;
 pub mod event_queue;
 pub mod memory;
 pub mod packet;
+pub mod scenario;
 pub mod sim;
 pub mod stats;
 pub mod world;
@@ -22,6 +23,9 @@ pub use memory::{
     ROUTE_FLAG_VALID, RouteEntry, RoutingTableError,
 };
 pub use packet::{Packet, PacketSpec};
+pub use scenario::{
+    ScenarioConfig, ScenarioEventSpec, SceneSpec, SpawnAgentsSpec, SpawnShape, TrafficSpec,
+};
 pub use sim::{SimPipeline, SimResult};
 pub use stats::SimStats;
 pub use world::agents_grid::AgentHashGrid;

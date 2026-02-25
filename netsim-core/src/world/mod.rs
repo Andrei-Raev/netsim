@@ -5,6 +5,7 @@
 
 pub mod agents_grid;
 pub mod cpu;
+pub mod scene_generator;
 pub mod scenes;
 
 use std::fmt;

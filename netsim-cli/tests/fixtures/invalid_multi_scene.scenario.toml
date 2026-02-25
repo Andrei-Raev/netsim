@@ -1,0 +1,43 @@
+[world]
+seed = 1
+width = 2
+height = 2
+cell_size = 1.0
+
+[simulation]
+ticks = 10
+event_queue_window = 4
+
+[scene]
+preset = "minimal"
+
+[[scene.sources]]
+id = 1
+field_type = "noise"
+strength = 1.0
+shape = { kind = "circle", center = [0.5, 0.5], radius = 1.0 }
+influence = { kind = "hard" }
+time = { kind = "static" }
+active = { start = 0, end = 10 }
+
+[[events]]
+kind = "spawn_agents"
+tick = 0
+agent_id_start = 0
+count = 1
+
+[events.agent]
+type_id = 1
+routing_cap = 1
+scratch_cap = 8
+compute_power = 1.0
+bandwidth = 1.0
+self_speed = 1.0
+memory_cap = 0
+
+[events.shape]
+kind = "grid"
+rows = 1
+cols = 1
+spacing = 1.0
+origin = [0.0, 0.0]
