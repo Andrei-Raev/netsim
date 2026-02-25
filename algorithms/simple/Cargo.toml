@@ -6,3 +6,6 @@ edition = "2021"
 [dependencies]
 # Временный маркер: зависимости пока не используются.
 netsim-core = { path = "../../netsim-core" }
+
+[dev-dependencies]
+netsim-core = { path = "../../netsim-core" }
