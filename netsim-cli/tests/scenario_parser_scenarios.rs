@@ -23,3 +23,14 @@ fn scenario_parser_accepts_traffic_area() {
     let result = load_scenario(fixture.to_str().unwrap());
     assert!(result.is_ok());
 }
+
+#[test]
+fn scenario_parser_accepts_initial_events() {
+    let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("tests")
+        .join("fixtures")
+        .join("valid_initial_events.scenario.toml");
+
+    let result = load_scenario(fixture.to_str().unwrap());
+    assert!(result.is_ok());
+}

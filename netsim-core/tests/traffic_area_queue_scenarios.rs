@@ -24,6 +24,7 @@ fn traffic_area_queues_events_in_current_tick() {
         scene: SceneSpec::Preset {
             name: "minimal".to_string(),
         },
+        initial_events: netsim_core::InitialEventsConfig::default(),
         events: vec![ScenarioEventSpec::TrafficArea(TrafficAreaSpec {
             tick: 0,
             repeat_every: 0,

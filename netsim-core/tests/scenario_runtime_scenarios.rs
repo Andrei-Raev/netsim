@@ -1,6 +1,7 @@
 use netsim_core::{
-    ScenarioConfig, ScenarioEventSpec, SceneSpec, SpawnAgentsSpec, SpawnShape, TrafficAreaShape,
-    TrafficAreaSpec, TrafficSpec, TrafficTargetSpec, TrafficTemplateSpec,
+    InitialEventRule, InitialEventsConfig, ScenarioConfig, ScenarioEventSpec, SceneSpec,
+    SpawnAgentsSpec, SpawnShape, TrafficAreaShape, TrafficAreaSpec, TrafficSpec, TrafficTargetSpec,
+    TrafficTemplateSpec,
 };
 
 #[test]
@@ -23,6 +24,21 @@ fn scenario_events_for_tick_respects_repeat() {
         noise_drop_threshold: 0.0,
         scene: SceneSpec::Preset {
             name: "minimal".to_string(),
+        },
+        initial_events: InitialEventsConfig {
+            seed: 10,
+            rules: vec![InitialEventRule {
+                tick: 4,
+                count: 1,
+                packet_id_base: 99,
+                src_range: (0, 0),
+                dst_range: (1, 1),
+                ttl: 1,
+                size_bytes: 1,
+                quality: 1.0,
+                meta: false,
+                route_hint: 0,
+            }],
         },
         events: vec![
             ScenarioEventSpec::Traffic(TrafficSpec {
@@ -80,5 +96,5 @@ fn scenario_events_for_tick_respects_repeat() {
     assert_eq!(events_t1.len(), 1);
     assert_eq!(events_t2.len(), 1);
     assert_eq!(events_t3.len(), 1);
-    assert_eq!(events_t4.len(), 1);
+    assert_eq!(events_t4.len(), 2);
 }

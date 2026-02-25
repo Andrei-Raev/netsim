@@ -17,6 +17,8 @@ pub struct ScenarioConfig {
     pub noise_drop_threshold: f32,
     /// Описание сцены.
     pub scene: SceneSpec,
+    /// Конфигурация начальных событий.
+    pub initial_events: crate::InitialEventsConfig,
     /// Список событий сценария.
     pub events: Vec<ScenarioEventSpec>,
 }
@@ -50,11 +52,21 @@ impl ScenarioConfig {
 
     /// Готовит список событий для заданного тика.
     pub fn events_for_tick(&self, tick: u64) -> Vec<ScenarioEventSpec> {
-        self.events
+        let mut events: Vec<ScenarioEventSpec> = self
+            .events
             .iter()
             .filter(|event| event.is_due(tick))
             .cloned()
-            .collect()
+            .collect();
+
+        let generated = self
+            .initial_events
+            .events_for_tick(tick)
+            .into_iter()
+            .map(ScenarioEventSpec::Traffic);
+        events.extend(generated);
+
+        events
     }
 }
 
@@ -136,7 +148,7 @@ impl SpawnAgentsSpec {
 }
 
 /// Спецификация события трафика.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct TrafficSpec {
     /// Тик срабатывания события.
     pub tick: u64,

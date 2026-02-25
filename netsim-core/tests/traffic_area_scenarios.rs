@@ -25,6 +25,7 @@ fn traffic_area_enqueues_packets_for_agents_in_rect() {
         scene: SceneSpec::Preset {
             name: "minimal".to_string(),
         },
+        initial_events: netsim_core::InitialEventsConfig::default(),
         events: vec![
             ScenarioEventSpec::SpawnAgents(SpawnAgentsSpec {
                 tick: 0,
@@ -92,6 +93,7 @@ fn traffic_area_ignores_agents_outside_circle() {
         scene: SceneSpec::Preset {
             name: "minimal".to_string(),
         },
+        initial_events: netsim_core::InitialEventsConfig::default(),
         events: vec![
             ScenarioEventSpec::SpawnAgents(SpawnAgentsSpec {
                 tick: 0,

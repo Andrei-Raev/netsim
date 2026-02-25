@@ -4,9 +4,10 @@ use anyhow::{Context, Result, anyhow};
 use serde::Deserialize;
 
 use netsim_core::{
-    FieldShape, FieldSource, InfluenceType, ScenarioConfig, ScenarioEventSpec, SceneSpec,
-    SpawnAgentsSpec, SpawnShape, TimeProfile, TrafficAreaShape, TrafficAreaSpec, TrafficSpec,
-    TrafficTargetSpec, TrafficTemplateSpec, Vec2, WorldBase, WorldConfig, WorldFieldType,
+    FieldShape, FieldSource, InfluenceType, InitialEventRule, InitialEventsConfig, ScenarioConfig,
+    ScenarioEventSpec, SceneSpec, SpawnAgentsSpec, SpawnShape, TimeProfile, TrafficAreaShape,
+    TrafficAreaSpec, TrafficSpec, TrafficTargetSpec, TrafficTemplateSpec, Vec2, WorldBase,
+    WorldConfig, WorldFieldType,
 };
 
 #[derive(Debug, Clone, Deserialize)]
@@ -14,6 +15,8 @@ pub struct ScenarioFile {
     pub world: WorldConfigFile,
     pub simulation: SimulationFile,
     pub scene: SceneFile,
+    #[serde(default)]
+    pub initial_events: Vec<InitialEventRuleFile>,
     #[serde(default)]
     pub events: Vec<EventFile>,
 }
@@ -115,6 +118,20 @@ pub struct AgentSpecFile {
     pub bandwidth: f32,
     pub self_speed: f32,
     pub memory_cap: u32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct InitialEventRuleFile {
+    pub tick: u64,
+    pub count: u32,
+    pub packet_id_base: u64,
+    pub src_range: [u32; 2],
+    pub dst_range: [u32; 2],
+    pub ttl: u16,
+    pub size_bytes: u32,
+    pub quality: f32,
+    pub meta: bool,
+    pub route_hint: u32,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -267,6 +284,14 @@ impl ScenarioFile {
             event_queue_window: self.simulation.event_queue_window,
             noise_drop_threshold: self.simulation.noise_drop_threshold,
             scene,
+            initial_events: InitialEventsConfig {
+                seed: self.world.seed,
+                rules: self
+                    .initial_events
+                    .iter()
+                    .map(|rule| rule.to_core())
+                    .collect(),
+            },
             events: self.events.iter().map(|event| event.to_core()).collect(),
         }
     }
@@ -342,6 +367,23 @@ impl TrafficFile {
             meta: self.meta,
             route_hint: self.route_hint,
             repeat_every: self.repeat_every,
+        }
+    }
+}
+
+impl InitialEventRuleFile {
+    pub fn to_core(&self) -> InitialEventRule {
+        InitialEventRule {
+            tick: self.tick,
+            count: self.count,
+            packet_id_base: self.packet_id_base,
+            src_range: (self.src_range[0], self.src_range[1]),
+            dst_range: (self.dst_range[0], self.dst_range[1]),
+            ttl: self.ttl,
+            size_bytes: self.size_bytes,
+            quality: self.quality,
+            meta: self.meta,
+            route_hint: self.route_hint,
         }
     }
 }

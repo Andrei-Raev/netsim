@@ -5,6 +5,7 @@ height = 12
 cell_size = 1.0
 
 [simulation]
+seed = 42
 ticks = 100
 event_queue_window = 64
 noise_drop_threshold = 0.6
@@ -68,3 +69,16 @@ route_hint = 0
 
 [events.target]
 kind = "self_target"
+
+
+[[initial_events]]
+tick = 0
+count = 4
+packet_id_base = 500
+src_range = [0, 3]
+dst_range = [4, 7]
+ttl = 3
+size_bytes = 32
+quality = 1.0
+meta = false
+route_hint = 0

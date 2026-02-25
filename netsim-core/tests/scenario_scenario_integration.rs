@@ -24,6 +24,7 @@ fn pipeline_spawns_agents_from_scenario() {
         scene: SceneSpec::Preset {
             name: "minimal".to_string(),
         },
+        initial_events: netsim_core::InitialEventsConfig::default(),
         events: vec![ScenarioEventSpec::SpawnAgents(SpawnAgentsSpec {
             tick: 0,
             agent_id_start: 0,
@@ -70,6 +71,7 @@ fn pipeline_enqueues_traffic_events() {
         scene: SceneSpec::Preset {
             name: "minimal".to_string(),
         },
+        initial_events: netsim_core::InitialEventsConfig::default(),
         events: vec![
             ScenarioEventSpec::SpawnAgents(SpawnAgentsSpec {
                 tick: 0,

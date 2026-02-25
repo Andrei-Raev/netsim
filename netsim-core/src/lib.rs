@@ -3,6 +3,7 @@ pub mod agent_runtime;
 pub mod config;
 pub mod event;
 pub mod event_queue;
+pub mod initial_events;
 pub mod memory;
 pub mod packet;
 pub mod scenario;
@@ -17,6 +18,7 @@ pub use agent_runtime::{
 pub use config::{InitialEventSpec, SimConfig};
 pub use event::{Event, EventKind};
 pub use event_queue::{EventQueue, EventQueueConfig};
+pub use initial_events::{InitialEventRule, InitialEventsConfig};
 pub use memory::{
     AGENT_MEMORY_MAGIC, AGENT_MEMORY_VERSION, AgentDescriptor, AgentMemoryArena, AgentMemoryBlock,
     AgentMemoryBlockMut, AgentMemoryBuilder, AgentMemoryLayout, AgentMemorySpec, MemoryId,

@@ -1,4 +1,6 @@
-use netsim_core::{ScenarioConfig, ScenarioEventSpec, SceneSpec, SpawnAgentsSpec, SpawnShape};
+use netsim_core::{
+    InitialEventsConfig, ScenarioConfig, ScenarioEventSpec, SceneSpec, SpawnAgentsSpec, SpawnShape,
+};
 
 #[test]
 fn scenario_builds_minimal_scene() {
@@ -21,6 +23,7 @@ fn scenario_builds_minimal_scene() {
         scene: SceneSpec::Preset {
             name: "minimal".to_string(),
         },
+        initial_events: InitialEventsConfig::default(),
         events: vec![ScenarioEventSpec::SpawnAgents(SpawnAgentsSpec {
             tick: 0,
             agent_id_start: 0,
