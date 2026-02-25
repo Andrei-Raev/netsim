@@ -46,3 +46,25 @@ quality = 0.8
 meta = false
 route_hint = 0
 repeat_every = 0
+
+
+[[events]]
+kind = "traffic_area"
+tick = 2
+repeat_every = 3
+
+[events.area]
+kind = "rect"
+min = [0.0, 0.0]
+max = [3.0, 3.0]
+
+[events.template]
+packet_id_base = 200
+ttl = 3
+size_bytes = 64
+quality = 0.9
+meta = false
+route_hint = 0
+
+[events.target]
+kind = "self_target"

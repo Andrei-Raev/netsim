@@ -5,8 +5,8 @@ use serde::Deserialize;
 
 use netsim_core::{
     FieldShape, FieldSource, InfluenceType, ScenarioConfig, ScenarioEventSpec, SceneSpec,
-    SpawnAgentsSpec, SpawnShape, TimeProfile, TrafficSpec, Vec2, WorldBase, WorldConfig,
-    WorldFieldType,
+    SpawnAgentsSpec, SpawnShape, TimeProfile, TrafficAreaShape, TrafficAreaSpec, TrafficSpec,
+    TrafficTargetSpec, TrafficTemplateSpec, Vec2, WorldBase, WorldConfig, WorldFieldType,
 };
 
 #[derive(Debug, Clone, Deserialize)]
@@ -79,6 +79,7 @@ pub struct GenerateSceneFile {
 pub enum EventFile {
     SpawnAgents(SpawnAgentsFile),
     Traffic(TrafficFile),
+    TrafficArea(TrafficAreaFile),
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -129,6 +130,41 @@ pub struct TrafficFile {
     pub route_hint: u32,
     #[serde(default)]
     pub repeat_every: u64,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct TrafficAreaFile {
+    pub tick: u64,
+    #[serde(default)]
+    pub repeat_every: u64,
+    pub area: TrafficAreaShapeFile,
+    pub template: TrafficTemplateFile,
+    pub target: TrafficTargetFile,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum TrafficAreaShapeFile {
+    Grid { min: [usize; 2], max: [usize; 2] },
+    Circle { center: [f32; 2], radius: f32 },
+    Rect { min: [f32; 2], max: [f32; 2] },
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct TrafficTemplateFile {
+    pub packet_id_base: u64,
+    pub ttl: u16,
+    pub size_bytes: u32,
+    pub quality: f32,
+    pub meta: bool,
+    pub route_hint: u32,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum TrafficTargetFile {
+    Fixed { dst_id: u32 },
+    SelfTarget,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -241,6 +277,7 @@ impl EventFile {
         match self {
             EventFile::SpawnAgents(spec) => ScenarioEventSpec::SpawnAgents(spec.to_core()),
             EventFile::Traffic(spec) => ScenarioEventSpec::Traffic(spec.to_core()),
+            EventFile::TrafficArea(spec) => ScenarioEventSpec::TrafficArea(spec.to_core()),
         }
     }
 }
@@ -305,6 +342,62 @@ impl TrafficFile {
             meta: self.meta,
             route_hint: self.route_hint,
             repeat_every: self.repeat_every,
+        }
+    }
+}
+
+impl TrafficAreaFile {
+    pub fn to_core(&self) -> TrafficAreaSpec {
+        TrafficAreaSpec {
+            tick: self.tick,
+            repeat_every: self.repeat_every,
+            area: self.area.to_core(),
+            template: self.template.to_core(),
+            target: self.target.to_core(),
+        }
+    }
+}
+
+impl TrafficAreaShapeFile {
+    pub fn to_core(&self) -> TrafficAreaShape {
+        match self {
+            TrafficAreaShapeFile::Grid { min, max } => TrafficAreaShape::Grid {
+                min: (min[0], min[1]),
+                max: (max[0], max[1]),
+            },
+            TrafficAreaShapeFile::Circle { center, radius } => TrafficAreaShape::Circle {
+                center_x: center[0],
+                center_y: center[1],
+                radius: *radius,
+            },
+            TrafficAreaShapeFile::Rect { min, max } => TrafficAreaShape::Rect {
+                min_x: min[0],
+                min_y: min[1],
+                max_x: max[0],
+                max_y: max[1],
+            },
+        }
+    }
+}
+
+impl TrafficTemplateFile {
+    pub fn to_core(&self) -> TrafficTemplateSpec {
+        TrafficTemplateSpec {
+            packet_id_base: self.packet_id_base,
+            ttl: self.ttl,
+            size_bytes: self.size_bytes,
+            quality: self.quality,
+            meta: self.meta,
+            route_hint: self.route_hint,
+        }
+    }
+}
+
+impl TrafficTargetFile {
+    pub fn to_core(&self) -> TrafficTargetSpec {
+        match self {
+            TrafficTargetFile::Fixed { dst_id } => TrafficTargetSpec::Fixed { dst_id: *dst_id },
+            TrafficTargetFile::SelfTarget => TrafficTargetSpec::SelfTarget,
         }
     }
 }

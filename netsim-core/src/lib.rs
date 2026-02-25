@@ -24,7 +24,8 @@ pub use memory::{
 };
 pub use packet::{Packet, PacketSpec};
 pub use scenario::{
-    ScenarioConfig, ScenarioEventSpec, SceneSpec, SpawnAgentsSpec, SpawnShape, TrafficSpec,
+    ScenarioConfig, ScenarioEventSpec, SceneSpec, SpawnAgentsSpec, SpawnShape, TrafficAreaShape,
+    TrafficAreaSpec, TrafficSpec, TrafficTargetSpec, TrafficTemplateSpec,
 };
 pub use sim::{SimPipeline, SimResult};
 pub use stats::SimStats;

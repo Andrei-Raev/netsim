@@ -76,6 +76,8 @@ pub enum ScenarioEventSpec {
     SpawnAgents(SpawnAgentsSpec),
     /// Трафик (команда агенту отправить пакет).
     Traffic(TrafficSpec),
+    /// Трафик в области (каждый агент в зоне получает команду на отправку).
+    TrafficArea(TrafficAreaSpec),
 }
 
 impl ScenarioEventSpec {
@@ -84,6 +86,7 @@ impl ScenarioEventSpec {
         match self {
             ScenarioEventSpec::SpawnAgents(spec) => spec.tick == tick,
             ScenarioEventSpec::Traffic(spec) => spec.is_due(tick),
+            ScenarioEventSpec::TrafficArea(spec) => spec.is_due(tick),
         }
     }
 }
@@ -165,4 +168,78 @@ impl TrafficSpec {
         }
         tick >= self.tick && (tick - self.tick).is_multiple_of(self.repeat_every)
     }
+}
+
+/// Спецификация трафика в области.
+#[derive(Debug, Clone)]
+pub struct TrafficAreaSpec {
+    /// Тик первого срабатывания.
+    pub tick: u64,
+    /// Период повторения (0 = одноразово).
+    pub repeat_every: u64,
+    /// Геометрия области.
+    pub area: TrafficAreaShape,
+    /// Шаблон пакета для генерации трафика.
+    pub template: TrafficTemplateSpec,
+    /// Параметры выбора адресата.
+    pub target: TrafficTargetSpec,
+}
+
+impl TrafficAreaSpec {
+    /// Проверяет, срабатывает ли событие на текущем тике.
+    pub fn is_due(&self, tick: u64) -> bool {
+        if self.repeat_every == 0 {
+            return tick == self.tick;
+        }
+        tick >= self.tick && (tick - self.tick).is_multiple_of(self.repeat_every)
+    }
+}
+
+/// Геометрия области трафика.
+#[derive(Debug, Clone)]
+pub enum TrafficAreaShape {
+    /// Сетка вокруг центра по индексам ячеек.
+    Grid {
+        min: (usize, usize),
+        max: (usize, usize),
+    },
+    /// Окружность в координатах мира.
+    Circle {
+        center_x: f32,
+        center_y: f32,
+        radius: f32,
+    },
+    /// Прямоугольник в координатах мира.
+    Rect {
+        min_x: f32,
+        min_y: f32,
+        max_x: f32,
+        max_y: f32,
+    },
+}
+
+/// Шаблон пакета для трафика области.
+#[derive(Debug, Clone)]
+pub struct TrafficTemplateSpec {
+    /// Базовый идентификатор пакета (инкрементируется).
+    pub packet_id_base: u64,
+    /// TTL пакета.
+    pub ttl: u16,
+    /// Размер пакета в байтах.
+    pub size_bytes: u32,
+    /// Показатель качества/шума сигнала.
+    pub quality: f32,
+    /// Признак служебного пакета.
+    pub meta: bool,
+    /// Подсказка следующего хопа.
+    pub route_hint: u32,
+}
+
+/// Варианты выбора целевого агента.
+#[derive(Debug, Clone)]
+pub enum TrafficTargetSpec {
+    /// Отправка на конкретный агент.
+    Fixed { dst_id: u32 },
+    /// Отправка на самого себя.
+    SelfTarget,
 }

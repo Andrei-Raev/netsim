@@ -1,0 +1,55 @@
+[world]
+seed = 1
+width = 2
+height = 2
+cell_size = 1.0
+
+[simulation]
+ticks = 5
+event_queue_window = 4
+
+[scene]
+preset = "minimal"
+
+[[events]]
+kind = "spawn_agents"
+tick = 0
+agent_id_start = 0
+count = 1
+
+[events.agent]
+type_id = 1
+routing_cap = 1
+scratch_cap = 8
+compute_power = 1.0
+bandwidth = 1.0
+self_speed = 1.0
+memory_cap = 0
+
+[events.shape]
+kind = "grid"
+rows = 1
+cols = 1
+spacing = 1.0
+origin = [0.0, 0.0]
+
+[[events]]
+kind = "traffic_area"
+tick = 1
+repeat_every = 2
+
+[events.area]
+kind = "rect"
+min = [0.0, 0.0]
+max = [1.0, 1.0]
+
+[events.template]
+packet_id_base = 10
+ttl = 2
+size_bytes = 4
+quality = 1.0
+meta = false
+route_hint = 0
+
+[events.target]
+kind = "self_target"

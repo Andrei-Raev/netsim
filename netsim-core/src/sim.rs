@@ -2,7 +2,33 @@ use crate::{
     AgentMemory, AgentMemoryArena, AgentRuntime, AgentSoA, AllowAllValidator, Event, EventQueue,
     EventQueueConfig, Packet, SimConfig, SimStats, WorldGrid, WorldGridGenerator,
 };
-use crate::{ScenarioConfig, ScenarioEventSpec, SpawnShape, TrafficSpec};
+use crate::{
+    ScenarioConfig, ScenarioEventSpec, SpawnShape, TrafficAreaShape, TrafficAreaSpec, TrafficSpec,
+    TrafficTargetSpec,
+};
+
+/// Спецификация пакета для постановки в очередь.
+#[derive(Debug, Clone, Copy)]
+struct TrafficPacketSpec {
+    /// Тик отправки.
+    tick: u64,
+    /// Идентификатор пакета.
+    packet_id: u64,
+    /// Агент-источник.
+    src_id: u32,
+    /// Агент-получатель.
+    dst_id: u32,
+    /// TTL пакета.
+    ttl: u16,
+    /// Размер пакета в байтах.
+    size_bytes: u32,
+    /// Показатель качества/шума сигнала.
+    quality: f32,
+    /// Признак служебного пакета.
+    meta: bool,
+    /// Подсказка следующего хопа.
+    route_hint: u32,
+}
 
 /// Результат прогона симуляции.
 #[derive(Debug, Clone)]
@@ -251,6 +277,9 @@ impl SimPipeline {
                 ScenarioEventSpec::Traffic(spec) => {
                     self.apply_traffic_event(tick, spec);
                 }
+                ScenarioEventSpec::TrafficArea(spec) => {
+                    self.apply_traffic_area_event(tick, spec);
+                }
             }
         }
     }
@@ -323,12 +352,83 @@ impl SimPipeline {
     }
 
     fn apply_traffic_event(&mut self, tick: u64, spec: TrafficSpec) {
+        if self.agents.is_empty() {
+            self.stats.packets_drop += 1;
+            return;
+        }
+
+        self.enqueue_packet(TrafficPacketSpec {
+            tick,
+            packet_id: spec.packet_id,
+            src_id: spec.src_id,
+            dst_id: spec.dst_id,
+            ttl: spec.ttl,
+            size_bytes: spec.size_bytes,
+            quality: spec.quality,
+            meta: spec.meta,
+            route_hint: spec.route_hint,
+        });
+    }
+
+    fn apply_traffic_area_event(&mut self, tick: u64, spec: TrafficAreaSpec) {
+        if self.agents.is_empty() {
+            self.stats.packets_drop += 1;
+            return;
+        }
+
+        let mut queued = 0usize;
+        let mut packet_id = spec.template.packet_id_base;
+
+        for agent_index in 0..self.agents.len() {
+            if !self.agents.alive[agent_index] {
+                continue;
+            }
+            let pos_x = self.agents.pos_x[agent_index];
+            let pos_y = self.agents.pos_y[agent_index];
+            if !self.is_inside_traffic_area(&spec.area, pos_x, pos_y) {
+                continue;
+            }
+
+            let src_id = self.agents.agent_id[agent_index];
+            let dst_id = match spec.target {
+                TrafficTargetSpec::Fixed { dst_id } => dst_id,
+                TrafficTargetSpec::SelfTarget => src_id,
+            };
+
+            self.enqueue_packet(TrafficPacketSpec {
+                tick,
+                packet_id,
+                src_id,
+                dst_id,
+                ttl: spec.template.ttl,
+                size_bytes: spec.template.size_bytes,
+                quality: spec.template.quality,
+                meta: spec.template.meta,
+                route_hint: spec.template.route_hint,
+            });
+
+            packet_id = packet_id.saturating_add(1);
+            queued += 1;
+        }
+
+        if queued == 0 {
+            self.stats.packets_drop += 1;
+        }
+    }
+
+    fn enqueue_packet(&mut self, spec: TrafficPacketSpec) {
+        let agent_index = spec.src_id as usize;
+        if agent_index >= self.agents.len() {
+            self.stats.packets_drop += 1;
+            return;
+        }
+
         let packet = Packet::from_spec(crate::PacketSpec {
             packet_id: spec.packet_id,
             src_id: spec.src_id,
             dst_id: spec.dst_id,
-            created_tick: tick,
-            deliver_tick: tick,
+            created_tick: spec.tick,
+            deliver_tick: spec.tick,
             ttl: spec.ttl,
             size_bytes: spec.size_bytes,
             quality: spec.quality,
@@ -336,16 +436,46 @@ impl SimPipeline {
             route_hint: spec.route_hint,
         });
 
-        let agent_index = spec.src_id as usize;
-        if agent_index >= self.agents.len() {
-            self.stats.packets_drop += 1;
-            return;
-        }
-
         let packet_seq = self.agents.packet_seq[agent_index];
         self.agents.packet_seq[agent_index] = packet_seq.saturating_add(1);
         let event = Event::packet(spec.src_id, packet_seq, packet);
         self.event_queue.push(event);
+    }
+
+    fn is_inside_traffic_area(&self, area: &TrafficAreaShape, pos_x: f32, pos_y: f32) -> bool {
+        match *area {
+            TrafficAreaShape::Grid { min, max } => match &self.world_grid {
+                Some(grid) => match grid.world_to_cell(pos_x, pos_y) {
+                    Some((cx, cy)) => cx >= min.0 && cy >= min.1 && cx <= max.0 && cy <= max.1,
+                    None => false,
+                },
+                None => {
+                    let cx = pos_x.floor() as i64;
+                    let cy = pos_y.floor() as i64;
+                    if cx < 0 || cy < 0 {
+                        return false;
+                    }
+                    let cx = cx as usize;
+                    let cy = cy as usize;
+                    cx >= min.0 && cy >= min.1 && cx <= max.0 && cy <= max.1
+                }
+            },
+            TrafficAreaShape::Circle {
+                center_x,
+                center_y,
+                radius,
+            } => {
+                let dx = pos_x - center_x;
+                let dy = pos_y - center_y;
+                dx * dx + dy * dy <= radius * radius
+            }
+            TrafficAreaShape::Rect {
+                min_x,
+                min_y,
+                max_x,
+                max_y,
+            } => pos_x >= min_x && pos_y >= min_y && pos_x <= max_x && pos_y <= max_y,
+        }
     }
 
     fn should_drop_by_world(&self, event: &Event) -> bool {
