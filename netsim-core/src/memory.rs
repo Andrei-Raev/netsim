@@ -451,6 +451,17 @@ impl<'a> AgentMemoryBlockMut<'a> {
         let scratch = self.scratchpad_mut();
         scratch.fill(0);
     }
+
+    /// Возвращает статистику агента.
+    pub fn stats(&self) -> AgentStats {
+        self.descriptor().stats
+    }
+
+    /// Записывает статистику агента.
+    pub fn write_stats(&mut self, stats: AgentStats) {
+        let descriptor = self.descriptor_mut();
+        descriptor.stats = stats;
+    }
 }
 
 /// Mutable view таблицы маршрутизации.

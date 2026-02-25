@@ -9,6 +9,7 @@ pub mod packet;
 pub mod process_send;
 pub mod scenario;
 pub mod sim;
+pub mod statistics;
 pub mod stats;
 pub mod world;
 
@@ -32,6 +33,7 @@ pub use scenario::{
     TrafficAreaSpec, TrafficSpec, TrafficTargetSpec, TrafficTemplateSpec,
 };
 pub use sim::{SimPipeline, SimResult};
+pub use statistics::{StatisticsCollector, StatsSample};
 pub use stats::SimStats;
 pub use world::agents_grid::AgentHashGrid;
 pub use world::scenes::{WorldScene, generate_scene, minimal_scene};

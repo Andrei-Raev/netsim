@@ -1,6 +1,7 @@
 use crate::{
     AgentMemory, AgentMemoryArena, AgentRuntime, AgentSoA, AllowAllValidator, Event, EventQueue,
-    EventQueueConfig, Packet, ProcessSend, SimConfig, SimStats, WorldGrid, WorldGridGenerator,
+    EventQueueConfig, Packet, ProcessSend, SimConfig, SimStats, StatisticsCollector, StatsSample,
+    WorldGrid, WorldGridGenerator,
 };
 use crate::{
     ScenarioConfig, ScenarioEventSpec, SpawnShape, TrafficAreaShape, TrafficAreaSpec, TrafficSpec,
@@ -60,6 +61,8 @@ pub struct SimPipeline {
     pub world_noise_drop_threshold: f32,
     /// Обработчик отправки пакетов.
     pub process_send: ProcessSend,
+    /// Сборщик статистики.
+    pub statistics_collector: StatisticsCollector,
 }
 
 impl SimPipeline {
@@ -86,6 +89,7 @@ impl SimPipeline {
             world_grid: None,
             world_noise_drop_threshold: 0.0,
             process_send: ProcessSend,
+            statistics_collector: StatisticsCollector,
         }
     }
 
@@ -120,6 +124,7 @@ impl SimPipeline {
             world_grid: None,
             world_noise_drop_threshold: 0.0,
             process_send: ProcessSend,
+            statistics_collector: StatisticsCollector,
         }
     }
 
@@ -142,12 +147,14 @@ impl SimPipeline {
             world_grid: None,
             world_noise_drop_threshold: config.noise_drop_threshold,
             process_send: ProcessSend,
+            statistics_collector: StatisticsCollector,
         }
     }
 
     /// Выполняет один тик симуляции.
     pub fn step(&mut self) {
         self.process_current_events();
+        self.flush_stats_for_tick(self.event_queue.current_tick());
         self.current_tick = self.event_queue.current_tick();
         self.event_queue.advance();
     }
@@ -161,6 +168,7 @@ impl SimPipeline {
         let grid = generator.build_grid(tick);
         self.set_world_grid(grid);
         self.process_current_events();
+        self.flush_stats_for_tick(tick);
         self.current_tick = tick;
         self.event_queue.advance();
     }
@@ -175,6 +183,7 @@ impl SimPipeline {
         let grid = generator.build_grid(tick);
         self.set_world_grid(grid);
         self.process_current_events();
+        self.flush_stats_for_tick(tick);
         self.current_tick = tick;
         self.event_queue.advance();
     }
@@ -246,13 +255,19 @@ impl SimPipeline {
                 continue;
             }
 
+            let id = self.agents.memory_id[agent_index];
+            let should_drop_world = self.should_drop_by_world(&event);
+            let mut memory = AgentMemory::new(&mut self.memory_arena, id);
+
             if event.payload.ttl == 0 {
                 self.stats.packets_drop += 1;
+                self.statistics_collector.on_drop(&mut memory);
                 continue;
             }
 
-            if self.should_drop_by_world(&event) {
+            if should_drop_world {
                 self.stats.packets_drop += 1;
+                self.statistics_collector.on_drop(&mut memory);
                 continue;
             }
 
@@ -262,18 +277,45 @@ impl SimPipeline {
                 .process_send
                 .process(event, self.world_grid.as_ref(), pos_x, pos_y);
 
-            let id = self.agents.memory_id[agent_index];
-            let mut memory = AgentMemory::new(&mut self.memory_arena, id);
+            if let Some(grid) = self.world_grid.as_ref() {
+                let cell = grid.sample(pos_x, pos_y);
+                self.statistics_collector.on_world_cell(&mut memory, cell);
+            }
+
             let outgoing =
                 self.runtime
                     .handle_event(agent_index, &self.agents, &mut memory, &event);
 
             if let Some(outgoing_event) = outgoing {
                 self.stats.packets_sent += 1;
+                self.statistics_collector
+                    .on_send(&mut memory, outgoing_event.payload.quality);
                 self.event_queue.push(outgoing_event);
             } else {
                 self.stats.packets_recv += 1;
+                self.statistics_collector
+                    .on_receive(&mut memory, event.payload.quality);
             }
+        }
+    }
+
+    fn flush_stats_for_tick(&mut self, tick: u64) {
+        for index in 0..self.agents.len() {
+            if !self.agents.alive[index] {
+                continue;
+            }
+            let id = self.agents.memory_id[index];
+            let memory = AgentMemory::new(&mut self.memory_arena, id);
+            let collect_every = memory.block.descriptor().collect_every;
+            if collect_every == 0 || !tick.is_multiple_of(collect_every) {
+                continue;
+            }
+            let stats = memory.block.stats();
+            self.statistics_collector.flush_agent(
+                &mut self.memory_arena,
+                id,
+                StatsSample::from(stats),
+            );
         }
     }
 

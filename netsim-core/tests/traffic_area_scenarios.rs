@@ -72,6 +72,10 @@ fn traffic_area_enqueues_packets_for_agents_in_rect() {
 
     pipeline.step_with_scenario(&scenario, &generator);
 
+    let id = pipeline.agents.memory_id[0];
+    let memory = netsim_core::AgentMemory::new(&mut pipeline.memory_arena, id);
+    assert_eq!(memory.block.descriptor().collect_every, 2);
+
     assert_eq!(pipeline.stats.packets_sent, 0);
     assert!(pipeline.stats.packets_recv >= 1);
 }
@@ -142,6 +146,10 @@ fn traffic_area_ignores_agents_outside_circle() {
     let generator = CpuWorldGenerator::new(scene.config, scene.sources, scene.seed);
 
     pipeline.step_with_scenario(&scenario, &generator);
+
+    let id = pipeline.agents.memory_id[0];
+    let memory = netsim_core::AgentMemory::new(&mut pipeline.memory_arena, id);
+    assert_eq!(memory.block.descriptor().collect_every, 2);
 
     assert_eq!(pipeline.stats.packets_recv, 1);
 }
