@@ -29,7 +29,11 @@ fn pipeline_spawns_agents_from_scenario() {
             tick: 0,
             agent_id_start: 0,
             count: 4,
-            agent_spec: netsim_core::AgentSpec::placeholder(0),
+            agent_spec: {
+                let mut spec = netsim_core::AgentSpec::placeholder(0);
+                spec.collect_every = 2;
+                spec
+            },
             shape: SpawnShape::Grid {
                 rows: 2,
                 cols: 2,
@@ -77,7 +81,11 @@ fn pipeline_enqueues_traffic_events() {
                 tick: 0,
                 agent_id_start: 0,
                 count: 1,
-                agent_spec: netsim_core::AgentSpec::placeholder(0),
+                agent_spec: {
+                    let mut spec = netsim_core::AgentSpec::placeholder(0);
+                    spec.collect_every = 2;
+                    spec
+                },
                 shape: SpawnShape::Grid {
                     rows: 1,
                     cols: 1,

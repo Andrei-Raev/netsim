@@ -19,6 +19,8 @@ pub struct AgentSpec {
     pub self_speed: f32,
     /// Явно заданная емкость памяти (0 = вычислить автоматически).
     pub memory_cap: u32,
+    /// Период сборки метрик по агенту (0 = без сборки).
+    pub collect_every: u64,
 }
 
 impl AgentSpec {
@@ -33,6 +35,7 @@ impl AgentSpec {
             bandwidth: 0.0,
             self_speed: 0.0,
             memory_cap: 0,
+            collect_every: 0,
         }
     }
 }
@@ -62,6 +65,11 @@ impl<'a> AgentBuilder<'a> {
             type_id: spec.type_id,
             memory_cap: spec.memory_cap,
         });
+
+        {
+            let mut block = self.memory_builder.block_mut(memory_id);
+            block.update_descriptor_collect_every(spec.collect_every);
+        }
 
         let memory_cap = if spec.memory_cap == 0 {
             layout.total_len

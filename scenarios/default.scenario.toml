@@ -27,6 +27,7 @@ compute_power = 1.0
 bandwidth = 1.0
 self_speed = 0.5
 memory_cap = 0
+collect_every = 5
 
 [events.shape]
 kind = "grid"

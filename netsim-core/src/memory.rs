@@ -47,6 +47,30 @@ pub struct AgentMemoryHeader {
     pub offsets: [u32; 3],
 }
 
+/// Метрики агента, записываемые без динамической аллокации.
+#[repr(C, align(8))]
+#[derive(Debug, Clone, Copy, Default)]
+pub struct AgentStats {
+    /// Количество отправленных пакетов.
+    pub sent_count: u64,
+    /// Количество полученных пакетов.
+    pub recv_count: u64,
+    /// Количество дропнутых пакетов.
+    pub drop_count: u64,
+    /// Суммарная стоимость.
+    pub cost_accum: f32,
+    /// Суммарная пропускная нагрузка.
+    pub bandwidth_accum: f32,
+    /// Суммарная нагрузка по миру.
+    pub load_accum: f32,
+    /// Сумма качества сигналов.
+    pub quality_sum: f32,
+    /// Количество сэмплов качества.
+    pub quality_samples: u32,
+    /// Выравнивание.
+    pub _pad: u32,
+}
+
 /// Дескриптор агента в блоке памяти.
 #[repr(C, align(8))]
 #[derive(Debug, Clone, Copy, Default)]
@@ -69,6 +93,10 @@ pub struct AgentDescriptor {
     pub bandwidth: f32,
     /// Ограничение скорости движения.
     pub self_speed: f32,
+    /// Период сборки метрик по агенту (0 = без сборки).
+    pub collect_every: u64,
+    /// Метрики агента.
+    pub stats: AgentStats,
 }
 
 /// Запись таблицы маршрутизации.
@@ -239,6 +267,11 @@ impl<'a> AgentMemoryBuilder<'a> {
         Self { arena }
     }
 
+    /// Возвращает mutable view на блок памяти агента.
+    pub fn block_mut(&mut self, id: MemoryId) -> AgentMemoryBlockMut<'_> {
+        self.arena.block_mut(id)
+    }
+
     /// Создает блок памяти агента и возвращает его идентификатор и layout.
     pub fn build(&mut self, spec: AgentMemorySpec) -> (MemoryId, AgentMemoryLayout) {
         let layout = AgentMemoryLayout::new(spec.routing_cap, spec.scratch_cap);
@@ -278,6 +311,8 @@ impl<'a> AgentMemoryBuilder<'a> {
             compute_power: spec.compute_power,
             bandwidth: spec.bandwidth,
             self_speed: spec.self_speed,
+            collect_every: 0,
+            stats: AgentStats::default(),
         };
         block.write_descriptor(descriptor);
 
@@ -372,6 +407,12 @@ impl<'a> AgentMemoryBlockMut<'a> {
         descriptor.compute_power = compute_power;
         descriptor.bandwidth = bandwidth;
         descriptor.self_speed = self_speed;
+    }
+
+    /// Обновляет период сборки метрик в дескрипторе.
+    pub fn update_descriptor_collect_every(&mut self, collect_every: u64) {
+        let descriptor = self.descriptor_mut();
+        descriptor.collect_every = collect_every;
     }
 
     /// Возвращает таблицу маршрутизации (mutable).

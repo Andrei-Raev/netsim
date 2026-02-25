@@ -49,11 +49,9 @@ fn traffic_area_queues_events_in_current_tick() {
     let mut pipeline = netsim_core::SimPipeline::from_scenario(&scenario);
     pipeline.agents.extend(1);
     let mut builder = netsim_core::AgentBuilder::new(&mut pipeline.memory_arena);
-    builder.build(
-        &mut pipeline.agents,
-        0,
-        netsim_core::AgentSpec::placeholder(0),
-    );
+    let mut spec = netsim_core::AgentSpec::placeholder(0);
+    spec.collect_every = 2;
+    builder.build(&mut pipeline.agents, 0, spec);
 
     pipeline.agents.pos_x[0] = 0.0;
     pipeline.agents.pos_y[0] = 0.0;

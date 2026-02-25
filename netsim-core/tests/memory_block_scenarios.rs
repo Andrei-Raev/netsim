@@ -16,6 +16,9 @@ fn descriptor_contains_routing_and_scratch_caps() {
 
     assert_eq!(descriptor.routing_cap, 12);
     assert_eq!(descriptor.scratch_cap, 256);
+    assert_eq!(descriptor.stats.sent_count, 0);
+    assert_eq!(descriptor.stats.recv_count, 0);
+    assert_eq!(descriptor.collect_every, 0);
 }
 
 #[test]

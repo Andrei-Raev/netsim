@@ -118,6 +118,8 @@ pub struct AgentSpecFile {
     pub bandwidth: f32,
     pub self_speed: f32,
     pub memory_cap: u32,
+    #[serde(default)]
+    pub collect_every: u64,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -318,6 +320,7 @@ impl SpawnAgentsFile {
             bandwidth: self.agent.bandwidth,
             self_speed: self.agent.self_speed,
             memory_cap: self.agent.memory_cap,
+            collect_every: self.agent.collect_every,
         };
 
         SpawnAgentsSpec {

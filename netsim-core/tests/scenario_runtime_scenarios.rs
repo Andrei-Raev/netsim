@@ -57,7 +57,11 @@ fn scenario_events_for_tick_respects_repeat() {
                 tick: 1,
                 agent_id_start: 0,
                 count: 1,
-                agent_spec: netsim_core::AgentSpec::placeholder(0),
+                agent_spec: {
+                    let mut spec = netsim_core::AgentSpec::placeholder(0);
+                    spec.collect_every = 1;
+                    spec
+                },
                 shape: SpawnShape::Grid {
                     rows: 1,
                     cols: 1,

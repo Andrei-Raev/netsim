@@ -31,7 +31,11 @@ fn traffic_area_enqueues_packets_for_agents_in_rect() {
                 tick: 0,
                 agent_id_start: 0,
                 count: 4,
-                agent_spec: netsim_core::AgentSpec::placeholder(0),
+                agent_spec: {
+                    let mut spec = netsim_core::AgentSpec::placeholder(0);
+                    spec.collect_every = 2;
+                    spec
+                },
                 shape: SpawnShape::Grid {
                     rows: 2,
                     cols: 2,
@@ -99,7 +103,11 @@ fn traffic_area_ignores_agents_outside_circle() {
                 tick: 0,
                 agent_id_start: 0,
                 count: 2,
-                agent_spec: netsim_core::AgentSpec::placeholder(0),
+                agent_spec: {
+                    let mut spec = netsim_core::AgentSpec::placeholder(0);
+                    spec.collect_every = 2;
+                    spec
+                },
                 shape: SpawnShape::Grid {
                     rows: 1,
                     cols: 2,
