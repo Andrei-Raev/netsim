@@ -39,10 +39,7 @@ fn main() -> Result<()> {
     print_config(&cfg_snapshot);
 
     let mut pipeline = netsim_core::SimPipeline::from_scenario(&scenario);
-    let scene = scenario.build_scene();
-    let generator =
-        netsim_core::world::cpu::CpuWorldGenerator::new(scene.config, scene.sources, scene.seed);
-    let result = pipeline.run_with_scenario(&scenario, &generator);
+    let result = pipeline.run_scenario(&scenario);
 
     let _legacy = cfg;
 

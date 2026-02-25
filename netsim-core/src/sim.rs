@@ -251,7 +251,7 @@ impl SimPipeline {
         }
     }
 
-    /// Запускает сценарий на заданное число тиков.
+    /// Запускает сценарий на заданное число тиков с заранее подготовленным генератором.
     pub fn run_with_scenario<G>(&mut self, scenario: &ScenarioConfig, generator: &G) -> SimResult
     where
         G: WorldGridGenerator,
@@ -264,6 +264,16 @@ impl SimPipeline {
             ticks_processed: scenario.ticks,
             stats: self.stats.clone(),
         }
+    }
+
+    /// Запускает сценарий на CPU‑референс генераторе мира.
+    pub fn run_scenario(&mut self, scenario: &ScenarioConfig) -> SimResult {
+        let scene = scenario.build_scene();
+        self.world_seed = scene.seed;
+        let generator =
+            crate::world::cpu::CpuWorldGenerator::new(scene.config, scene.sources, scene.seed);
+
+        self.run_with_scenario(scenario, &generator)
     }
 
     /// Обрабатывает события текущего тика и обновляет статистику.
