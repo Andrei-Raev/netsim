@@ -38,10 +38,15 @@ fn main() -> Result<()> {
 
     print_config(&cfg_snapshot);
 
-    let mut pipeline = netsim_core::SimPipeline::from_scenario(&scenario);
-    let result = pipeline.run_scenario(&scenario);
+    let visualizer = netsim_screen::SimVisualizer::new(
+        netsim_screen::WindowConfig {
+            width_px: cfg.window.width_px,
+            height_px: cfg.window.height_px,
+        },
+        scenario,
+    )?;
 
-    let _legacy = cfg;
+    let result = visualizer.run()?;
 
     info!(
         "Симуляция завершена: ticks={}, sent={}, recv={}, drop={}",
@@ -105,7 +110,7 @@ fn print_config(cfg: &app_config::SystemConfigFile) {
             value: event.packet.src_id.to_string(),
         });
         rows.push(ConfigRow {
-            key: format!("sim.initial_events[{index}].packet.dst_id"),
+            key: format!("sim.initial_errors[{index}].packet.dst_id"),
             value: event.packet.dst_id.to_string(),
         });
         rows.push(ConfigRow {

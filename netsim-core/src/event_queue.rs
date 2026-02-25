@@ -93,6 +93,18 @@ impl EventQueue {
         events
     }
 
+    /// Возвращает события текущего тика без удаления.
+    pub fn peek_current(&self) -> &[Event] {
+        let index = (self.current_tick % self.window_size) as usize;
+        let slot = &self.slots[index];
+
+        if slot.tick != self.current_tick {
+            return &[];
+        }
+
+        slot.events.as_slice()
+    }
+
     /// Переходит к следующему тику.
     pub fn advance(&mut self) {
         self.current_tick += 1;
