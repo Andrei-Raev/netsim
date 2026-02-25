@@ -6,6 +6,7 @@ pub mod event_queue;
 pub mod initial_events;
 pub mod memory;
 pub mod packet;
+pub mod process_send;
 pub mod scenario;
 pub mod sim;
 pub mod stats;
@@ -25,6 +26,7 @@ pub use memory::{
     ROUTE_FLAG_VALID, RouteEntry, RoutingTableError,
 };
 pub use packet::{Packet, PacketSpec};
+pub use process_send::ProcessSend;
 pub use scenario::{
     ScenarioConfig, ScenarioEventSpec, SceneSpec, SpawnAgentsSpec, SpawnShape, TrafficAreaShape,
     TrafficAreaSpec, TrafficSpec, TrafficTargetSpec, TrafficTemplateSpec,

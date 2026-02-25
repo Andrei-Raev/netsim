@@ -1,6 +1,6 @@
 use crate::{
     AgentMemory, AgentMemoryArena, AgentRuntime, AgentSoA, AllowAllValidator, Event, EventQueue,
-    EventQueueConfig, Packet, SimConfig, SimStats, WorldGrid, WorldGridGenerator,
+    EventQueueConfig, Packet, ProcessSend, SimConfig, SimStats, WorldGrid, WorldGridGenerator,
 };
 use crate::{
     ScenarioConfig, ScenarioEventSpec, SpawnShape, TrafficAreaShape, TrafficAreaSpec, TrafficSpec,
@@ -58,6 +58,8 @@ pub struct SimPipeline {
     pub world_grid: Option<WorldGrid>,
     /// Порог шума для дропа пакетов.
     pub world_noise_drop_threshold: f32,
+    /// Обработчик отправки пакетов.
+    pub process_send: ProcessSend,
 }
 
 impl SimPipeline {
@@ -83,6 +85,7 @@ impl SimPipeline {
             memory_arena,
             world_grid: None,
             world_noise_drop_threshold: 0.0,
+            process_send: ProcessSend,
         }
     }
 
@@ -116,6 +119,7 @@ impl SimPipeline {
             memory_arena,
             world_grid: None,
             world_noise_drop_threshold: 0.0,
+            process_send: ProcessSend,
         }
     }
 
@@ -137,6 +141,7 @@ impl SimPipeline {
             memory_arena,
             world_grid: None,
             world_noise_drop_threshold: config.noise_drop_threshold,
+            process_send: ProcessSend,
         }
     }
 
@@ -234,7 +239,7 @@ impl SimPipeline {
     /// Обрабатывает события текущего тика и обновляет статистику.
     pub fn process_current_events(&mut self) {
         let events = self.event_queue.pop_current();
-        for mut event in events {
+        for event in events {
             let agent_index = event.agent_id as usize;
             if agent_index >= self.agents.len() {
                 self.stats.packets_drop += 1;
@@ -251,7 +256,11 @@ impl SimPipeline {
                 continue;
             }
 
-            event.payload.ttl = event.payload.ttl.saturating_sub(1);
+            let pos_x = self.agents.pos_x[agent_index];
+            let pos_y = self.agents.pos_y[agent_index];
+            let event = self
+                .process_send
+                .process(event, self.world_grid.as_ref(), pos_x, pos_y);
 
             let id = self.agents.memory_id[agent_index];
             let mut memory = AgentMemory::new(&mut self.memory_arena, id);
