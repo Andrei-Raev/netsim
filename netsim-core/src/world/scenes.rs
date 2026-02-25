@@ -108,3 +108,133 @@ pub fn minimal_scene(width: usize, height: usize, cell_size: f32, seed: u64) -> 
 
     WorldScene::new(config, sources, seed)
 }
+
+/// Детерминированный генератор сцен на базе seed.
+///
+/// Создает заданное число источников, чередуя типы полей и формы.
+pub fn generate_scene(config: WorldConfig, seed: u64, source_count: usize) -> WorldScene {
+    let mut rng = SceneRng::new(seed);
+    let mut sources = Vec::with_capacity(source_count);
+
+    let world_width = config.width as f32 * config.cell_size;
+    let world_height = config.height as f32 * config.cell_size;
+    let max_radius = world_width.min(world_height) * 0.35;
+    let min_radius = config.cell_size.max(0.1);
+
+    for index in 0..source_count {
+        let field_type = match index % 4 {
+            0 => WorldFieldType::Load,
+            1 => WorldFieldType::Noise,
+            2 => WorldFieldType::Bandwidth,
+            _ => WorldFieldType::Cost,
+        };
+
+        let radius = rng.range_f32(min_radius, max_radius.max(min_radius));
+        let center = Vec2::new(
+            rng.range_f32(0.0, world_width),
+            rng.range_f32(0.0, world_height),
+        );
+        let shape = match index % 3 {
+            0 => FieldShape::Circle { center, radius },
+            1 => FieldShape::Rect {
+                center,
+                half_extents: Vec2::new(radius * 0.6, radius * 0.6),
+            },
+            _ => {
+                let from = Vec2::new(
+                    rng.range_f32(0.0, world_width),
+                    rng.range_f32(0.0, world_height),
+                );
+                let to = Vec2::new(
+                    rng.range_f32(0.0, world_width),
+                    rng.range_f32(0.0, world_height),
+                );
+                FieldShape::Line {
+                    from,
+                    to,
+                    width: radius * 0.5,
+                }
+            }
+        };
+
+        let influence = match index % 3 {
+            0 => InfluenceType::Hard,
+            1 => InfluenceType::Linear,
+            _ => InfluenceType::Gaussian,
+        };
+
+        let strength = rng.range_f32(0.4, 2.0);
+        let time_profile = match index % 4 {
+            0 => TimeProfile::Static,
+            1 => TimeProfile::Pulse {
+                period_ticks: rng.range_u64(20, 120),
+                duty: rng.range_f32(0.1, 0.9),
+            },
+            2 => TimeProfile::Wave {
+                period_ticks: rng.range_u64(30, 160),
+                amplitude: rng.range_f32(0.1, 0.6),
+                phase: rng.range_f32(0.0, std::f32::consts::TAU),
+            },
+            _ => TimeProfile::Curve {
+                points: vec![
+                    (0, rng.range_f32(0.4, 0.9)),
+                    (rng.range_u64(20, 80), rng.range_f32(0.8, 1.4)),
+                ],
+            },
+        };
+
+        sources.push(FieldSource {
+            id: index as u64 + 1,
+            field_type,
+            shape,
+            influence,
+            strength,
+            time_profile,
+            active_window: ActiveWindow {
+                start: 0,
+                end: 10_000,
+            },
+        });
+    }
+
+    WorldScene::new(config, sources, seed)
+}
+
+#[derive(Debug, Clone)]
+struct SceneRng {
+    state: u64,
+}
+
+impl SceneRng {
+    fn new(seed: u64) -> Self {
+        Self { state: seed }
+    }
+
+    fn next_u64(&mut self) -> u64 {
+        self.state = self.state.wrapping_add(0x9E37_79B9_7F4A_7C15);
+        let mut z = self.state;
+        z = (z ^ (z >> 30)).wrapping_mul(0xBF58_476D_1CE4_E5B9);
+        z = (z ^ (z >> 27)).wrapping_mul(0x94D0_49BB_1331_11EB);
+        z ^ (z >> 31)
+    }
+
+    fn next_f32(&mut self) -> f32 {
+        let value = (self.next_u64() >> 40) as u32;
+        value as f32 / u32::MAX as f32
+    }
+
+    fn range_f32(&mut self, min: f32, max: f32) -> f32 {
+        if max <= min {
+            return min;
+        }
+        min + (max - min) * self.next_f32()
+    }
+
+    fn range_u64(&mut self, min: u64, max: u64) -> u64 {
+        if max <= min {
+            return min;
+        }
+        let span = max - min;
+        min + (self.next_u64() % span)
+    }
+}
