@@ -401,3 +401,70 @@ pub(crate) fn apply_source(
         WorldFieldType::Cost => cell.cost += value,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn world_to_cell_handles_bounds() {
+        let grid = WorldGrid {
+            width: 2,
+            height: 2,
+            cell_size: 1.0,
+            cells: vec![
+                WorldCell {
+                    load: 0.0,
+                    noise: 0.0,
+                    bandwidth: 0.0,
+                    cost: 0.0,
+                };
+                4
+            ],
+        };
+
+        assert_eq!(grid.world_to_cell(0.1, 0.1), Some((0, 0)));
+        assert_eq!(grid.world_to_cell(1.9, 1.9), Some((1, 1)));
+        assert_eq!(grid.world_to_cell(-0.1, 0.0), None);
+        assert_eq!(grid.world_to_cell(2.0, 0.0), None);
+        assert_eq!(grid.world_to_cell(0.0, 2.0), None);
+    }
+
+    #[test]
+    fn curve_value_handles_edges() {
+        let points = vec![(5, 2.0), (10, 4.0), (15, 1.0)];
+
+        assert!((curve_value(&points, 0) - 2.0).abs() < f32::EPSILON);
+        assert!((curve_value(&points, 5) - 2.0).abs() < f32::EPSILON);
+        assert!((curve_value(&points, 10) - 4.0).abs() < f32::EPSILON);
+        assert!((curve_value(&points, 12) - 2.8).abs() < 1e-6);
+        assert!((curve_value(&points, 20) - 1.0).abs() < f32::EPSILON);
+    }
+
+    #[test]
+    fn influence_weight_custom_is_deterministic() {
+        let shape = FieldShape::Circle {
+            center: Vec2::new(0.0, 0.0),
+            radius: 1.0,
+        };
+
+        let first = influence_weight(
+            InfluenceType::Custom { scale: 1.0 },
+            &shape,
+            Vec2::new(0.5, 0.5),
+            42,
+            7,
+            10,
+        );
+        let second = influence_weight(
+            InfluenceType::Custom { scale: 1.0 },
+            &shape,
+            Vec2::new(0.5, 0.5),
+            42,
+            7,
+            10,
+        );
+
+        assert!((first - second).abs() < f32::EPSILON);
+    }
+}

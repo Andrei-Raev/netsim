@@ -32,8 +32,8 @@ fn process_send_decrements_ttl_and_quality() {
         }),
     );
 
-    let updated = processor.process(event, Some(&grid), 0.5, 0.5);
+    let updated = processor.process(event, Some(&grid), 0, 0.5, 0.5);
 
-    assert_eq!(updated.payload.ttl, 2);
-    assert!((updated.payload.quality - 0.6).abs() < 1e-6);
+    assert_eq!(updated.event.payload.ttl, 2);
+    assert!((updated.event.payload.quality - 0.6).abs() < 1e-6);
 }

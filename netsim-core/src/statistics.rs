@@ -112,6 +112,26 @@ pub fn should_collect(collect_every: u64, tick: u64) -> bool {
     collect_every > 0 && tick.is_multiple_of(collect_every)
 }
 
+/// Проверяет, нужно ли дропнуть пакет из-за нагрузки мира.
+///
+/// Используется детерминированный шум, потому что это дает воспроизводимость.
+pub fn should_drop_by_load(world_seed: u64, packet_id: u64, load: f32) -> bool {
+    let load = load.clamp(0.0, 1.0);
+    let random = load_random(world_seed, packet_id);
+    random < load
+}
+
+fn load_random(world_seed: u64, packet_id: u64) -> f32 {
+    let mut value = world_seed ^ packet_id.wrapping_mul(0x9E37_79B9_7F4A_7C15);
+    value ^= value >> 30;
+    value = value.wrapping_mul(0xBF58_476D_1CE4_E5B9);
+    value ^= value >> 27;
+    value = value.wrapping_mul(0x94D0_49BB_1331_11EB);
+    value ^= value >> 31;
+    let max = u64::MAX as f64;
+    (value as f64 / max) as f32
+}
+
 /// Учитывает событие как полученное, потому что оно обработано агентом.
 pub fn apply_receive(event: &Event, memory: &mut AgentMemory, collector: &StatisticsCollector) {
     collector.on_receive(memory, event.payload.quality);

@@ -61,6 +61,8 @@ pub struct SimPipeline {
     pub world_grid: Option<WorldGrid>,
     /// Порог шума для дропа пакетов.
     pub world_noise_drop_threshold: f32,
+    /// Seed мира для детерминизма физики.
+    pub world_seed: u64,
     /// Обработчик отправки пакетов.
     pub process_send: ProcessSend,
     /// Сборщик статистики.
@@ -93,6 +95,7 @@ impl SimPipeline {
             memory_arena,
             world_grid: None,
             world_noise_drop_threshold: 0.0,
+            world_seed: 0,
             process_send: ProcessSend,
             statistics_collector: StatisticsCollector,
         }
@@ -136,6 +139,7 @@ impl SimPipeline {
             memory_arena,
             world_grid: None,
             world_noise_drop_threshold: 0.0,
+            world_seed: 0,
             process_send: ProcessSend,
             statistics_collector: StatisticsCollector,
         }
@@ -162,6 +166,7 @@ impl SimPipeline {
             memory_arena,
             world_grid: None,
             world_noise_drop_threshold: config.noise_drop_threshold,
+            world_seed: config.seed,
             process_send: ProcessSend,
             statistics_collector: StatisticsCollector,
         }
@@ -289,9 +294,19 @@ impl SimPipeline {
 
             let pos_x = self.agents.pos_x[agent_index];
             let pos_y = self.agents.pos_y[agent_index];
-            let event = self
-                .process_send
-                .process(event, self.world_grid.as_ref(), pos_x, pos_y);
+            let processed = self.process_send.process(
+                event,
+                self.world_grid.as_ref(),
+                self.world_seed,
+                pos_x,
+                pos_y,
+            );
+
+            if processed.dropped {
+                self.stats.packets_drop += 1;
+                self.statistics_collector.on_drop(&mut memory);
+                continue;
+            }
 
             if let Some(grid) = self.world_grid.as_ref() {
                 let cell = grid.sample(pos_x, pos_y);
@@ -300,7 +315,7 @@ impl SimPipeline {
 
             let outgoing =
                 self.runtime
-                    .handle_event(agent_index, &self.agents, &mut memory, &event);
+                    .handle_event(agent_index, &self.agents, &mut memory, &processed.event);
 
             if let Some(outgoing_event) = outgoing {
                 self.stats.packets_sent += 1;
@@ -310,7 +325,7 @@ impl SimPipeline {
             } else {
                 self.stats.packets_recv += 1;
                 self.statistics_collector
-                    .on_receive(&mut memory, event.payload.quality);
+                    .on_receive(&mut memory, processed.event.payload.quality);
             }
         }
     }

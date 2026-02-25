@@ -94,7 +94,12 @@ impl AgentHashGrid {
         if cell_x < 0 || cell_y < 0 {
             return None;
         }
-        Some((cell_x as usize, cell_y as usize))
+        let cell_x = cell_x as usize;
+        let cell_y = cell_y as usize;
+        if cell_x >= self.width || cell_y >= self.height {
+            return None;
+        }
+        Some((cell_x, cell_y))
     }
 
     fn cell_index(&self, x: usize, y: usize) -> Option<usize> {

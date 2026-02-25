@@ -37,6 +37,7 @@ pub use sim::{SimPipeline, SimResult};
 pub use statistics::{StatisticsCollector, StatsSample};
 pub use stats::SimStats;
 pub use world::agents_grid::AgentHashGrid;
+pub use world::cpu::CpuWorldGenerator;
 pub use world::scenes::{WorldScene, generate_scene, minimal_scene};
 pub use world::{
     ActiveWindow, FieldShape, FieldSource, InfluenceType, TimeProfile, Vec2, WorldBase, WorldCell,
