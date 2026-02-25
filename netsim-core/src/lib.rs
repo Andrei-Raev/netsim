@@ -15,7 +15,8 @@ pub mod world;
 
 pub use agent::{AgentBuilder, AgentSoA, AgentSpec};
 pub use agent_runtime::{
-    AgentAlgorithm, AgentMemory, AgentRuntime, AllowAllValidator, EventValidator, RoutingTable,
+    AgentAlgorithm, AgentMemory, AgentRuntime, AllowAllValidator, BasicRoutingAlgorithm,
+    EventValidator, RoutingTable,
 };
 pub use config::{InitialEventSpec, SimConfig};
 pub use event::{Event, EventKind};

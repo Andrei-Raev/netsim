@@ -70,7 +70,10 @@ pub struct SimPipeline {
 impl SimPipeline {
     /// Создает новый пайплайн с заданным количеством агентов.
     pub fn new(agent_count: usize) -> Self {
-        let runtime = AgentRuntime::new(Box::new(AllowAllAlgorithm), Box::new(AllowAllValidator));
+        let runtime = AgentRuntime::new(
+            Box::new(crate::BasicRoutingAlgorithm),
+            Box::new(AllowAllValidator),
+        );
         let event_queue = EventQueue::new(EventQueueConfig { window_size: 64 });
         let mut memory_arena = AgentMemoryArena::new();
         let mut agents = AgentSoA::new(agent_count);
@@ -102,7 +105,10 @@ impl SimPipeline {
     }
 
     pub fn from_config(config: SimConfig) -> Self {
-        let runtime = AgentRuntime::new(Box::new(AllowAllAlgorithm), Box::new(AllowAllValidator));
+        let runtime = AgentRuntime::new(
+            Box::new(crate::BasicRoutingAlgorithm),
+            Box::new(AllowAllValidator),
+        );
         let mut event_queue = EventQueue::new(EventQueueConfig {
             window_size: config.event_queue_window,
         });
@@ -137,7 +143,10 @@ impl SimPipeline {
 
     /// Создает пайплайн по сценарию симуляции.
     pub fn from_scenario(config: &ScenarioConfig) -> Self {
-        let runtime = AgentRuntime::new(Box::new(AllowAllAlgorithm), Box::new(AllowAllValidator));
+        let runtime = AgentRuntime::new(
+            Box::new(crate::BasicRoutingAlgorithm),
+            Box::new(AllowAllValidator),
+        );
         let event_queue = EventQueue::new(EventQueueConfig {
             window_size: config.event_queue_window,
         });
@@ -560,22 +569,6 @@ impl SimPipeline {
         };
 
         cell.noise >= self.world_noise_drop_threshold
-    }
-}
-
-/// Алгоритм-заглушка: не генерирует новых событий.
-#[derive(Debug, Default, Clone, Copy)]
-struct AllowAllAlgorithm;
-
-impl crate::AgentAlgorithm for AllowAllAlgorithm {
-    fn eval_event(
-        &self,
-        _agent_index: usize,
-        _agents: &AgentSoA,
-        _memory: &mut AgentMemory,
-        _event: &Event,
-    ) -> Option<Event> {
-        None
     }
 }
 

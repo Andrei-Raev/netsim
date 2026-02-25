@@ -178,6 +178,41 @@ impl EventValidator for AllowAllValidator {
     }
 }
 
+/// Базовый алгоритм маршрутизации без оптимизации.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct BasicRoutingAlgorithm;
+
+impl AgentAlgorithm for BasicRoutingAlgorithm {
+    fn eval_event(
+        &self,
+        agent_index: usize,
+        agents: &AgentSoA,
+        memory: &mut AgentMemory,
+        event: &Event,
+    ) -> Option<Event> {
+        let agent_id = agents.agent_id[agent_index];
+        let trg_id = event.payload.trg_id;
+        if trg_id == agent_id {
+            return None;
+        }
+
+        let mut routing = memory.routing_table();
+        let entry = match routing.find(trg_id) {
+            Some(entry) if entry.ttl > 0 => entry,
+            _ => return None,
+        };
+
+        let next_hop = entry.next_hop;
+        let mut packet = event.payload;
+        packet.src_id = agent_id;
+        packet.dst_id = next_hop;
+        packet.hop_count = packet.hop_count.saturating_add(1);
+
+        let packet_seq = event.packet_seq.saturating_add(1);
+        Some(Event::packet(next_hop, packet_seq, packet))
+    }
+}
+
 /// Runtime, связывающий алгоритм и валидатор.
 pub struct AgentRuntime {
     algorithm: Box<dyn AgentAlgorithm + Send + Sync>,
