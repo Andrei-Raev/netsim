@@ -27,6 +27,8 @@ struct TrafficPacketSpec {
     quality: f32,
     /// Признак служебного пакета.
     meta: bool,
+    /// Идентификатор конечного адресата.
+    trg_id: u32,
     /// Подсказка следующего хопа.
     route_hint: u32,
 }
@@ -422,6 +424,7 @@ impl SimPipeline {
             size_bytes: spec.size_bytes,
             quality: spec.quality,
             meta: spec.meta,
+            trg_id: spec.trg_id,
             route_hint: spec.route_hint,
         });
     }
@@ -460,6 +463,7 @@ impl SimPipeline {
                 size_bytes: spec.template.size_bytes,
                 quality: spec.template.quality,
                 meta: spec.template.meta,
+                trg_id: spec.template.trg_id,
                 route_hint: spec.template.route_hint,
             });
 
@@ -489,6 +493,7 @@ impl SimPipeline {
             size_bytes: spec.size_bytes,
             quality: spec.quality,
             meta: spec.meta,
+            trg_id: spec.trg_id,
             route_hint: spec.route_hint,
         });
 
@@ -590,6 +595,7 @@ mod tests {
             size_bytes: 1,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         });
 
@@ -658,6 +664,7 @@ mod tests {
             size_bytes: 1,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         });
         pipeline.event_queue.push(Event::packet(0, 1, packet));
@@ -682,6 +689,7 @@ mod tests {
             size_bytes: 1,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         });
         pipeline.event_queue.push(Event::packet(0, 1, packet));
@@ -716,6 +724,7 @@ mod tests {
             size_bytes: 1,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         });
         let config = SimConfig {
@@ -735,6 +744,7 @@ mod tests {
                     size_bytes: 1,
                     quality: 1.0,
                     meta: false,
+                    trg_id: 0,
                     route_hint: 0,
                 },
             }],
@@ -779,6 +789,7 @@ mod tests {
             size_bytes: 1,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         });
         pipeline.event_queue.push(Event::packet(0, 1, packet));
@@ -805,6 +816,7 @@ mod tests {
             size_bytes: 1,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         });
         pipeline.event_queue.push(Event::packet(0, 1, packet));

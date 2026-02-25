@@ -23,6 +23,8 @@ pub struct Packet {
     pub hop_count: u16,
     /// Тег полезной нагрузки для маршрутизации.
     pub payload_tag: u16,
+    /// Идентификатор конечного адресата.
+    pub trg_id: u32,
     /// Подсказка следующего хопа для будущей логики.
     pub route_hint: u32,
 }
@@ -48,6 +50,8 @@ pub struct PacketSpec {
     pub quality: f32,
     /// Признак служебного пакета.
     pub meta: bool,
+    /// Идентификатор конечного адресата.
+    pub trg_id: u32,
     /// Подсказка следующего хопа для будущей логики.
     pub route_hint: u32,
 }
@@ -67,6 +71,7 @@ impl Packet {
             meta: spec.meta,
             hop_count: 0,
             payload_tag: 0,
+            trg_id: spec.trg_id,
             route_hint: spec.route_hint,
         }
     }

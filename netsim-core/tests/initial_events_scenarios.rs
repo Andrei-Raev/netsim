@@ -14,6 +14,7 @@ fn initial_events_are_deterministic_for_same_seed() {
             size_bytes: 8,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         }],
     };
@@ -38,6 +39,7 @@ fn initial_events_change_with_seed() {
             size_bytes: 8,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         }],
     };
@@ -54,6 +56,7 @@ fn initial_events_change_with_seed() {
             size_bytes: 8,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         }],
     };
@@ -78,6 +81,7 @@ fn initial_events_respect_bounds_and_count() {
             size_bytes: 4,
             quality: 0.5,
             meta: true,
+            trg_id: 0,
             route_hint: 1,
         }],
     };
@@ -106,6 +110,7 @@ fn initial_events_ignore_invalid_ranges() {
             size_bytes: 1,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         }],
     };

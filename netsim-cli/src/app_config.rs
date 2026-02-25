@@ -46,6 +46,8 @@ pub struct PacketSpecFile {
     pub quality: f32,
     /// Признак служебного пакета.
     pub meta: bool,
+    /// Идентификатор конечного адресата.
+    pub trg_id: u32,
     /// Подсказка следующего хопа для будущей логики.
     pub route_hint: u32,
 }
@@ -118,6 +120,7 @@ impl InitialEventFile {
                 size_bytes: self.packet.size_bytes,
                 quality: self.packet.quality,
                 meta: self.packet.meta,
+                trg_id: self.packet.trg_id,
                 route_hint: self.packet.route_hint,
             },
         }

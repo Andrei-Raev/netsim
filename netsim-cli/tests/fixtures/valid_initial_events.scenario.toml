@@ -21,6 +21,7 @@ ttl = 2
 size_bytes = 8
 quality = 1.0
 meta = false
+trg_id = 0
 route_hint = 0
 
 [[events]]

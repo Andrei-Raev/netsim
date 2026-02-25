@@ -45,6 +45,7 @@ fn pipeline_step_with_world_drops_by_noise() {
         size_bytes: 1,
         quality: 1.0,
         meta: false,
+        trg_id: 0,
         route_hint: 0,
     });
     pipeline.event_queue.push(Event::packet(0, 1, packet));
@@ -77,6 +78,7 @@ fn pipeline_step_with_world_allows_without_threshold() {
         size_bytes: 1,
         quality: 1.0,
         meta: false,
+        trg_id: 0,
         route_hint: 0,
     });
     pipeline.event_queue.push(Event::packet(0, 1, packet));

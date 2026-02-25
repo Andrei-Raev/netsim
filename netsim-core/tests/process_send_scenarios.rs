@@ -27,6 +27,7 @@ fn process_send_decrements_ttl_and_quality() {
             size_bytes: 1,
             quality: 1.0,
             meta: false,
+            trg_id: 1,
             route_hint: 0,
         }),
     );

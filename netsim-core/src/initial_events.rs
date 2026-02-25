@@ -46,6 +46,8 @@ pub struct InitialEventRule {
     pub quality: f32,
     /// Признак служебного пакета.
     pub meta: bool,
+    /// Идентификатор конечного адресата.
+    pub trg_id: u32,
     /// Подсказка следующего хопа.
     pub route_hint: u32,
 }
@@ -81,6 +83,7 @@ impl InitialEventRule {
                 size_bytes: self.size_bytes,
                 quality: self.quality,
                 meta: self.meta,
+                trg_id: self.trg_id,
                 route_hint: self.route_hint,
                 repeat_every: 0,
             });

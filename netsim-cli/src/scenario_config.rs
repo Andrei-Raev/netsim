@@ -133,6 +133,7 @@ pub struct InitialEventRuleFile {
     pub size_bytes: u32,
     pub quality: f32,
     pub meta: bool,
+    pub trg_id: u32,
     pub route_hint: u32,
 }
 
@@ -146,6 +147,7 @@ pub struct TrafficFile {
     pub size_bytes: u32,
     pub quality: f32,
     pub meta: bool,
+    pub trg_id: u32,
     pub route_hint: u32,
     #[serde(default)]
     pub repeat_every: u64,
@@ -176,6 +178,7 @@ pub struct TrafficTemplateFile {
     pub size_bytes: u32,
     pub quality: f32,
     pub meta: bool,
+    pub trg_id: u32,
     pub route_hint: u32,
 }
 
@@ -368,6 +371,7 @@ impl TrafficFile {
             size_bytes: self.size_bytes,
             quality: self.quality,
             meta: self.meta,
+            trg_id: self.trg_id,
             route_hint: self.route_hint,
             repeat_every: self.repeat_every,
         }
@@ -386,6 +390,7 @@ impl InitialEventRuleFile {
             size_bytes: self.size_bytes,
             quality: self.quality,
             meta: self.meta,
+            trg_id: self.trg_id,
             route_hint: self.route_hint,
         }
     }
@@ -433,6 +438,7 @@ impl TrafficTemplateFile {
             size_bytes: self.size_bytes,
             quality: self.quality,
             meta: self.meta,
+            trg_id: self.trg_id,
             route_hint: self.route_hint,
         }
     }

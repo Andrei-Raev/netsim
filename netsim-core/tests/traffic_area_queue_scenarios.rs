@@ -40,6 +40,7 @@ fn traffic_area_queues_events_in_current_tick() {
                 size_bytes: 1,
                 quality: 1.0,
                 meta: false,
+                trg_id: 0,
                 route_hint: 0,
             },
             target: TrafficTargetSpec::SelfTarget,

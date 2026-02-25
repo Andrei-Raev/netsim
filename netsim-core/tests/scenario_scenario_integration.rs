@@ -103,6 +103,7 @@ fn pipeline_enqueues_traffic_events() {
                 size_bytes: 32,
                 quality: 1.0,
                 meta: false,
+                trg_id: 0,
                 route_hint: 0,
                 repeat_every: 0,
             }),

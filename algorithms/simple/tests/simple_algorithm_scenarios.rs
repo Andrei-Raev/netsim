@@ -22,6 +22,7 @@ fn packet_for(dst_id: u32, packet_id: u64) -> Packet {
         size_bytes: 1,
         quality: 1.0,
         meta: false,
+        trg_id: dst_id,
         route_hint: 0,
     })
 }

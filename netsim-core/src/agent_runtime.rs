@@ -263,6 +263,7 @@ mod tests {
             size_bytes: 1,
             quality: 1.0,
             meta: false,
+            trg_id: 0,
             route_hint: 0,
         });
 

@@ -14,6 +14,7 @@ fn event_for(agent_id: u32, packet_seq: u32, deliver_tick: u64) -> Event {
         size_bytes: 1,
         quality: 1.0,
         meta: false,
+        trg_id: agent_id,
         route_hint: 0,
     });
 
@@ -100,6 +101,7 @@ fn pipeline_accepts_initial_events_from_config() {
                 size_bytes: 1,
                 quality: 1.0,
                 meta: false,
+                trg_id: 0,
                 route_hint: 0,
             },
         }],
@@ -131,6 +133,7 @@ fn pipeline_drops_events_with_zero_ttl() {
                 size_bytes: 1,
                 quality: 1.0,
                 meta: false,
+                trg_id: 0,
                 route_hint: 0,
             },
         }],

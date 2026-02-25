@@ -166,6 +166,8 @@ pub struct TrafficSpec {
     pub quality: f32,
     /// Признак служебного пакета.
     pub meta: bool,
+    /// Идентификатор конечного адресата.
+    pub trg_id: u32,
     /// Подсказка следующего хопа.
     pub route_hint: u32,
     /// Период повторения (0 = одноразово).
@@ -243,6 +245,8 @@ pub struct TrafficTemplateSpec {
     pub quality: f32,
     /// Признак служебного пакета.
     pub meta: bool,
+    /// Идентификатор конечного адресата.
+    pub trg_id: u32,
     /// Подсказка следующего хопа.
     pub route_hint: u32,
 }

@@ -12,6 +12,7 @@ fn event_for(agent_id: u32, packet_seq: u32, deliver_tick: u64) -> Event {
         size_bytes: 1,
         quality: 1.0,
         meta: false,
+        trg_id: agent_id,
         route_hint: 0,
     });
 
