@@ -1,0 +1,8 @@
+[package]
+name = "netsim-algorithm-simple"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+# Временный маркер: зависимости пока не используются.
+netsim-core = { path = "../../netsim-core" }

@@ -1,3 +1,11 @@
 [workspace]
-resolver = "3"
-members = ["netsim-cli", "netsim-core", "netsim-screen"]
+resolver = "1"
+members = [
+    "netsim-core",
+    "netsim-cli",
+    "netsim-screen",
+    "algorithms/simple",
+    "algorithms/broadcast",
+    "algorithms/manet",
+    "algorithms/testing",
+]

@@ -508,6 +508,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8ca58f447f06ed17d5fc4043ce1b10dd205e060fb3ce5b979b8ed8e59ff3f79"
 
 [[package]]
+name = "netsim-algorithm-broadcast"
+version = "0.1.0"
+dependencies = [
+ "netsim-core",
+]
+
+[[package]]
+name = "netsim-algorithm-manet"
+version = "0.1.0"
+dependencies = [
+ "netsim-core",
+]
+
+[[package]]
+name = "netsim-algorithm-simple"
+version = "0.1.0"
+dependencies = [
+ "netsim-core",
+]
+
+[[package]]
+name = "netsim-algorithm-testing"
+version = "0.1.0"
+dependencies = [
+ "netsim-core",
+]
+
+[[package]]
 name = "netsim-cli"
 version = "0.1.0"
 dependencies = [
