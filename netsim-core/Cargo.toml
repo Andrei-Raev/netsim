@@ -6,4 +6,5 @@ edition = "2024"
 [dependencies]
 
 [dev-dependencies]
+netsim-algorithm-simple = { path = "../algorithms/simple" }
 proptest = "1.10.0"

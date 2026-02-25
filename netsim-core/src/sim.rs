@@ -94,6 +94,11 @@ impl SimPipeline {
     }
 
     /// Создает пайплайн по конфигу ядра.
+    /// Обновляет runtime пайплайна.
+    pub fn set_runtime(&mut self, runtime: AgentRuntime) {
+        self.runtime = runtime;
+    }
+
     pub fn from_config(config: SimConfig) -> Self {
         let runtime = AgentRuntime::new(Box::new(AllowAllAlgorithm), Box::new(AllowAllValidator));
         let mut event_queue = EventQueue::new(EventQueueConfig {

@@ -557,6 +557,7 @@ dependencies = [
 name = "netsim-core"
 version = "0.1.0"
 dependencies = [
+ "netsim-algorithm-simple",
  "proptest",
 ]
 
